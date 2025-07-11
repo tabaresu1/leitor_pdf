@@ -336,152 +336,163 @@
         }
 
         function generatePrintVersion() {
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Relatório de Desempenho - ${new Date().toLocaleDateString()}</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            margin: 0;
-                            padding: 10px;
-                        }
-                        .print-header {
-                            text-align: center;
-                            margin-bottom: 15px;
-                        }
-                        .print-header h1 {
-                            font-size: 16pt;
-                            margin-bottom: 5px;
-                        }
-                        .print-header p {
-                            font-size: 10pt;
-                            color: #555;
-                        }
-                        .print-version table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            font-size: 8pt;
-                            page-break-inside: avoid;
-                        }
-                        .print-version th {
-                            background-color: #f3f4f6;
-                            padding: 6px;
-                            text-align: left;
-                            border: 1px solid #ddd;
-                            font-weight: bold;
-                        }
-                        .print-version td {
-                            padding: 5px;
-                            border: 1px solid #ddd;
-                        }
-                        .status-ideal { color: #10b981; }
-                        .status-above-ideal { color: #ef4444; }
-                        .status-below-ideal { color: #f97316; }
-                        .print-footer {
-                            text-align: center;
-                            margin-top: 15px;
-                            font-size: 8pt;
-                            color: #777;
-                        }
-                        @page {
-                            size: A4 landscape;
-                            margin: 5mm;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-header">
-                        <h1>Relatório de Desempenho de Vendas</h1>
-                        <p>${new Date().toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    
-                    <div class="print-version">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Vendedor</th>
-                                    <th>Venda MED (R$)</th>
-                                    <th>% MED</th>
-                                    <th>% Desc MED</th>
-                                    <th>Venda GEN (R$)</th>
-                                    <th>% GEN</th>
-                                    <th>% Desc GEN</th>
-                                    <th>Pontos (R$)</th>
-                                    <th>Meta (R$)</th>
-                                    <th>Status % MED</th>
-                                    <th>Status Desc MED</th>
-                                    <th>Status % GEN</th>
-                                    <th>Status Desc GEN</th>
-                                    <th>Status Pontos</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${generatePrintRows()}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="print-footer">
-                        Relatório gerado em ${new Date().toLocaleString('pt-BR')}
-                    </div>
-                    
-                    <script>
-                        window.onload = function() {
-                            setTimeout(function() {
-                                window.print();
-                                window.close();
-                            }, 200);
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-        }
+    const selectedVendedor = document.getElementById('sellerFilter').value;
+    const printData = selectedVendedor === 'all' 
+        ? allSellerData 
+        : allSellerData.filter(seller => seller.vendedor === selectedVendedor);
 
-        function generatePrintRows() {
-            return allSellerData.map(seller => {
-                const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
-                const percentVendasMedEtico = seller.totalVenda > 0 ? 
-                    seller.vendaMedEtico / seller.totalVenda : 0;
-                const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
-                    vendaGenericosSimilares / seller.totalVenda : 0;
-                
-                const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
-                const statusDescontoEtico = getStatus(seller.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
-                const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
-                const statusDescontoGenericos = getStatus(seller.mediaDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
-                const statusPontos = getStatus(seller.totalVenda, seller.metaPontos, 'pontos');
-                
-                return `
-                    <tr>
-                        <td>${seller.vendedor || 'N/I'}</td>
-                        <td>${formatCurrency(seller.vendaMedEtico)}</td>
-                        <td>${formatPercentage(percentVendasMedEtico)}</td>
-                        <td>${formatPercentage(seller.descontoEticoPercent)}</td>
-                        <td>${formatCurrency(vendaGenericosSimilares)}</td>
-                        <td>${formatPercentage(percentVendasGenericosSimilares)}</td>
-                        <td>${formatPercentage(seller.mediaDescontoGenericosSimilares)}</td>
-                        <td>${formatCurrency(seller.totalVenda)}</td>
-                        <td>${formatCurrency(seller.metaPontos)}</td>
-                        <td class="${statusVendasEtico.className}">${statusVendasEtico.message}</td>
-                        <td class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</td>
-                        <td class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</td>
-                        <td class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</td>
-                        <td class="${statusPontos.className}">${statusPontos.message}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
+    if (printData.length === 0) {
+        alert('Nenhum dado disponível para impressão');
+        return;
+    }
 
-        document.getElementById('processPdfButton').addEventListener('click', async () => {
-            const fileInput = document.getElementById('pdfUpload');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const dashboardContainer = document.getElementById('dashboardContainer');
-            const tbody = document.getElementById('spreadsheet-body');
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Relatório de Desempenho - ${new Date().toLocaleDateString()}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 10px;
+                }
+                .print-header {
+                    text-align: center;
+                    margin-bottom: 15px;
+                }
+                .print-header h1 {
+                    font-size: 16pt;
+                    margin-bottom: 5px;
+                }
+                .print-header p {
+                    font-size: 10pt;
+                    color: #555;
+                }
+                .print-version table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 8pt;
+                    page-break-inside: avoid;
+                }
+                .print-version th {
+                    background-color: #f3f4f6;
+                    padding: 6px;
+                    text-align: left;
+                    border: 1px solid #ddd;
+                    font-weight: bold;
+                }
+                .print-version td {
+                    padding: 5px;
+                    border: 1px solid #ddd;
+                }
+                .status-ideal { color: #10b981; }
+                .status-above-ideal { color: #ef4444; }
+                .status-below-ideal { color: #f97316; }
+                .print-footer {
+                    text-align: center;
+                    margin-top: 15px;
+                    font-size: 8pt;
+                    color: #777;
+                }
+                @page {
+                    size: A4 landscape;
+                    margin: 5mm;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-header">
+                <h1>Relatório de Desempenho de Vendas</h1>
+                <p>${selectedVendedor !== 'all' ? `Vendedor: ${selectedVendedor}` : 'Todos os Vendedores'}</p>
+                <p>${new Date().toLocaleDateString('pt-BR')}</p>
+            </div>
+            
+            <div class="print-version">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vendedor</th>
+                            <th>Venda MED (R$)</th>
+                            <th>% MED</th>
+                            <th>% Desc MED</th>
+                            <th>Venda GEN (R$)</th>
+                            <th>% GEN</th>
+                            <th>% Desc GEN</th>
+                            <th>Pontos (R$)</th>
+                            <th>Meta (R$)</th>
+                            <th>Status % MED</th>
+                            <th>Status Desc MED</th>
+                            <th>Status % GEN</th>
+                            <th>Status Desc GEN</th>
+                            <th>Status Pontos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generatePrintRows(printData)}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="print-footer">
+                Relatório gerado em ${new Date().toLocaleString('pt-BR')}
+            </div>
+            
+            <script>
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                        window.close();
+                    }, 200);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+function generatePrintRows(data = allSellerData) {
+    return data.map(seller => {
+        const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
+        const percentVendasMedEtico = seller.totalVenda > 0 ? 
+            seller.vendaMedEtico / seller.totalVenda : 0;
+        const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
+            vendaGenericosSimilares / seller.totalVenda : 0;
+        
+        const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
+        const statusDescontoEtico = getStatus(seller.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
+        const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
+        const statusDescontoGenericos = getStatus(seller.mediaDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
+        const statusPontos = getStatus(seller.totalVenda, seller.metaPontos, 'pontos');
+        
+        return `
+            <tr>
+                <td>${seller.vendedor || 'N/I'}</td>
+                <td>${formatCurrency(seller.vendaMedEtico)}</td>
+                <td>${formatPercentage(percentVendasMedEtico)}</td>
+                <td>${formatPercentage(seller.descontoEticoPercent)}</td>
+                <td>${formatCurrency(vendaGenericosSimilares)}</td>
+                <td>${formatPercentage(percentVendasGenericosSimilares)}</td>
+                <td>${formatPercentage(seller.mediaDescontoGenericosSimilares)}</td>
+                <td>${formatCurrency(seller.totalVenda)}</td>
+                <td>${formatCurrency(seller.metaPontos)}</td>
+                <td class="${statusVendasEtico.className}">${statusVendasEtico.message}</td>
+                <td class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</td>
+                <td class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</td>
+                <td class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</td>
+                <td class="${statusPontos.className}">${statusPontos.message}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+document.getElementById('processPdfButton').addEventListener('click', async () => {
+    const fileInput = document.getElementById('pdfUpload');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const dashboardContainer = document.getElementById('dashboardContainer');
+    const tbody = document.getElementById('spreadsheet-body');
             const filterContainer = document.getElementById('filterContainer');
             const exportContainer = document.getElementById('exportContainer');
             const printBtn = document.getElementById('printOptimizedBtn');
