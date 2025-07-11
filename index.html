@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Desempenho de Vendas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            min-width: 1400px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: normal;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        .col-vendedor { min-width: 150px; }
+        .col-valores { min-width: 120px; }
+        .col-percent { min-width: 100px; }
+        .col-status { min-width: 180px; }
+
+        .status-ideal {
+            color: #10b981;
+            font-weight: 500;
+        }
+        .status-above-ideal {
+            color: #ef4444;
+            font-weight: 500;
+        }
+        .status-below-ideal {
+            color: #f97316;
+            font-weight: 500;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            display: none;
+            margin-top: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="p-4 bg-gray-100">
+    <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg max-w-6xl w-full">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Dashboard de Desempenho de Vendas</h1>
+
+        <div class="flex flex-col items-center mb-6">
+            <label for="pdfUpload" class="block text-gray-700 text-sm font-bold mb-2">
+                Selecione o Relatório de Vendas em PDF:
+            </label>
+            <input type="file" id="pdfUpload" accept=".pdf" class="block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <button id="processPdfButton" class="mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                Processar PDF
+            </button>
+            <div id="loadingIndicator" class="loader"></div>
+        </div>
+
+        <div id="filterContainer" class="flex flex-col items-center mb-6 hidden">
+            <label for="sellerFilter" class="block text-gray-700 text-sm font-bold mb-2">
+                Filtrar por Vendedor:
+            </label>
+            <select id="sellerFilter" class="block w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <option value="all">Todos</option>
+            </select>
+        </div>
+
+        <div id="dashboardContainer" class="overflow-x-auto rounded-lg border border-gray-200 hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg col-vendedor">Vendedor</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-valores">Venda MED ETICO (R$)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-percent">% VENDAS MED ETICO</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-percent">% DESCONTO ETICO</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-valores">Venda GENÉRICOS E SIMILARES (R$)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-percent">% VENDAS GENÉRICOS E SIMILARES</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-percent">% DESCONTO GENÉRICOS E SIMILARES</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-valores">PONTOS (R$)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-valores">Meta PONTOS (R$)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % VENDAS MED ETICO</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % DESCONTO ETICO</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % VENDAS GENÉRICOS E SIMILARES</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % DESCONTO GENÉRICOS E SIMILARES</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg col-status">Status PONTOS</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="spreadsheet-body">
+                    <!-- Dados serão inseridos aqui via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Valores ideais para comparação
+        const idealValues = {
+            maxVendasMedEtico: 0.25,
+            maxDescontoEtico: 0.05,
+            minVendasGenericosSimilares: 0.75,
+            maxDescontoGenericosSimilares: 0.05
+        };
+
+        let allSellerData = [];
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { 
+                style: 'currency', 
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value || 0);
+        }
+
+        function formatPercentage(value) {
+            return new Intl.NumberFormat('pt-BR', { 
+                style: 'percent', 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value || 0);
+        }
+
+        function getStatus(value, ideal, type) {
+            let className = '';
+            let message = '';
+
+            if (type === 'percentVendasMedEtico' || type === 'percentDescontoEtico' || type === 'percentDescontoGenericosSimilares') {
+                if (value <= ideal) {
+                    className = 'status-ideal';
+                    message = 'Dentro do Ideal';
+                } else {
+                    className = 'status-above-ideal';
+                    message = 'Acima do Ideal';
+                }
+            } else if (type === 'percentVendasGenericosSimilares') {
+                if (value >= ideal) {
+                    className = 'status-ideal';
+                    message = 'Dentro do Ideal';
+                } else {
+                    className = 'status-below-ideal';
+                    message = 'Abaixo do Ideal';
+                }
+            } else if (type === 'pontos') {
+                if (value >= ideal) {
+                    className = 'status-ideal';
+                    message = 'Meta Atingida';
+                } else {
+                    className = 'status-below-ideal';
+                    message = 'Abaixo da Meta';
+                }
+            }
+            return { className, message };
+        }
+
+        function addSellerRow(sellerData) {
+            const tbody = document.getElementById('spreadsheet-body');
+            const vendaGenericosSimilares = (sellerData.vendaMedGene || 0) + (sellerData.vendaMedSimil || 0);
+            const percentVendasMedEtico = sellerData.totalVenda > 0 ? 
+                sellerData.vendaMedEtico / sellerData.totalVenda : 0;
+            const percentVendasGenericosSimilares = sellerData.totalVenda > 0 ? 
+                vendaGenericosSimilares / sellerData.totalVenda : 0;
+            const percentDescontoGenericosSimilares = sellerData.mediaDescontoGenericosSimilares || 0;
+
+            const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
+            const statusDescontoEtico = getStatus(sellerData.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
+            const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
+            const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
+            const statusPontos = getStatus(sellerData.totalVenda, sellerData.metaPontos, 'pontos');
+
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.dataset.vendedor = sellerData.vendedor || '';
+            row.innerHTML = `
+                <td class="px-6 py-4 text-sm font-medium text-gray-900 col-vendedor">${sellerData.vendedor || 'N/I'}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(sellerData.vendaMedEtico)}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(percentVendasMedEtico)}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(sellerData.descontoEticoPercent)}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(vendaGenericosSimilares)}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(percentVendasGenericosSimilares)}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(percentDescontoGenericosSimilares)}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(sellerData.totalVenda)}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(sellerData.metaPontos)}</td>
+                <td class="px-6 py-4 text-sm ${statusVendasEtico.className} col-status">${statusVendasEtico.message}</td>
+                <td class="px-6 py-4 text-sm ${statusDescontoEtico.className} col-status">${statusDescontoEtico.message}</td>
+                <td class="px-6 py-4 text-sm ${statusVendasGenericos.className} col-status">${statusVendasGenericos.message}</td>
+                <td class="px-6 py-4 text-sm ${statusDescontoGenericos.className} col-status">${statusDescontoGenericos.message}</td>
+                <td class="px-6 py-4 text-sm ${statusPontos.className} col-status">${statusPontos.message}</td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function populateSellerFilter(sellers) {
+            const sellerFilter = document.getElementById('sellerFilter');
+            sellerFilter.innerHTML = '<option value="all">Todos</option>';
+            
+            const uniqueSellers = [...new Set(sellers.map(s => s.vendedor))];
+            
+            uniqueSellers.forEach(seller => {
+                if (seller) {
+                    const option = document.createElement('option');
+                    option.value = seller;
+                    option.textContent = seller;
+                    sellerFilter.appendChild(option);
+                }
+            });
+            
+            document.getElementById('filterContainer').classList.remove('hidden');
+        }
+
+        function filterTable() {
+            const selectedVendedor = document.getElementById('sellerFilter').value;
+            const rows = document.querySelectorAll('#spreadsheet-body tr');
+
+            rows.forEach(row => {
+                const vendedorName = row.dataset.vendedor || '';
+                if (selectedVendedor === 'all' || vendedorName === selectedVendedor) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById('processPdfButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('pdfUpload');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const dashboardContainer = document.getElementById('dashboardContainer');
+            const tbody = document.getElementById('spreadsheet-body');
+            const filterContainer = document.getElementById('filterContainer');
+
+            if (fileInput.files.length === 0) {
+                alert('Por favor, selecione um arquivo PDF para processar.');
+                return;
+            }
+
+            const pdfFile = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('pdfFile', pdfFile);
+
+            loadingIndicator.style.display = 'block';
+            dashboardContainer.classList.add('hidden');
+            filterContainer.classList.add('hidden');
+            tbody.innerHTML = '';
+            allSellerData = [];
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/upload-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Erro ao processar o PDF.');
+                }
+
+                const result = await response.json();
+                console.log("Dados recebidos:", result);
+
+                if (result.data && result.data.length > 0) {
+                    allSellerData = result.data.map(seller => ({
+                        ...seller,
+                        totalVenda: (seller.vendaMedEtico || 0) + 
+                                   (seller.vendaMedGene || 0) + 
+                                   (seller.vendaMedSimil || 0)
+                    }));
+                    
+                    allSellerData.forEach(seller => {
+                        addSellerRow(seller);
+                    });
+                    
+                    populateSellerFilter(allSellerData);
+                    dashboardContainer.classList.remove('hidden');
+                } else {
+                    throw new Error("Nenhum dado de vendedor encontrado.");
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro: ' + error.message);
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        });
+
+        document.getElementById('sellerFilter').addEventListener('change', filterTable);
+    </script>
+</body>
+</html>
