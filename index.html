@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Desempenho de Vendas</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Adicionando html2pdf.js para exportação avançada -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
@@ -73,48 +72,84 @@
         
         /* Estilos para impressão */
         @media print {
+            @page {
+                size: auto;
+                margin: 10mm;
+            }
+            body, html {
+                width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
             body * {
                 visibility: hidden;
+                overflow: visible !important;
             }
             .printable-area, .printable-area * {
                 visibility: visible;
-            }
-            .printable-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 0;
-                margin: 0;
-                background: white;
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                max-width: none !important;
+                overflow: visible !important;
+                page-break-inside: avoid;
             }
             table {
                 width: 100% !important;
-                font-size: 10pt;
+                max-width: none !important;
+                font-size: 8pt;
+                transform: scale(0.75);
+                transform-origin: 0 0;
             }
-            th, td {
-                padding: 6px 8px;
-            }
-            .no-print, .no-print * {
+            .no-print {
                 display: none !important;
             }
-            .page-break {
-                page-break-after: always;
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 15px;
+                font-size: 16pt;
+                font-weight: bold;
             }
         }
         
-        /* Estilo para os botões de impressão/exportação */
-        .print-actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            justify-content: center;
+        /* Botão de impressão */
+        .print-button {
+            background-color: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 10px;
+        }
+        .print-button:hover {
+            background-color: #4338ca;
+        }
+        .print-button svg {
+            width: 18px;
+            height: 18px;
         }
     </style>
 </head>
 <body class="p-4 bg-gray-100">
     <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg max-w-6xl w-full">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Dashboard de Desempenho de Vendas</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Dashboard de Desempenho de Vendas</h1>
+            <button id="printButton" class="print-button no-print hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Imprimir/Exportar
+            </button>
+        </div>
 
         <div class="flex flex-col items-center mb-6">
             <label for="pdfUpload" class="block text-gray-700 text-sm font-bold mb-2">
@@ -136,20 +171,8 @@
             </select>
         </div>
 
-        <!-- Área de ações de impressão/exportação -->
-        <div id="printActions" class="print-actions no-print hidden">
-            <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                🖨️ Imprimir
-            </button>
-            <button onclick="exportToPDF()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                📄 Exportar PDF
-            </button>
-            <button onclick="exportToExcel()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                📊 Exportar Excel
-            </button>
-        </div>
-
         <div id="dashboardContainer" class="overflow-x-auto rounded-lg border border-gray-200 hidden printable-area">
+            <div class="print-header no-print">Dashboard de Desempenho de Vendas</div>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -305,81 +328,84 @@
             });
         }
 
-        // Função para exportar para PDF
-        function exportToPDF() {
+        // Função para exportar para PDF com todo o conteúdo
+        function exportFullDashboard() {
             const element = document.getElementById('dashboardContainer');
+            const originalStyles = {
+                overflow: element.style.overflow,
+                width: element.style.width
+            };
+
+            // Ajusta temporariamente os estilos para capturar todo o conteúdo
+            element.style.overflow = 'visible';
+            element.style.width = 'fit-content';
+
             const opt = {
                 margin: 10,
-                filename: 'dashboard_vendas.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2,
+                filename: 'dashboard_vendas_completo.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: {
+                    scale: 0.7,
                     scrollX: 0,
                     scrollY: 0,
+                    width: element.scrollWidth,
                     windowWidth: element.scrollWidth
                 },
-                jsPDF: { 
-                    unit: 'mm', 
-                    format: 'a3', // Usando A3 para melhor acomodar a tabela larga
-                    orientation: 'landscape' 
+                jsPDF: {
+                    unit: 'mm',
+                    format: [element.scrollWidth * 0.2, element.scrollHeight * 0.2],
+                    orientation: 'landscape'
                 }
             };
-            
-            // Adiciona título ao PDF
-            const title = document.createElement('h1');
-            title.textContent = 'Dashboard de Desempenho de Vendas';
-            title.style.textAlign = 'center';
-            title.style.fontSize = '18pt';
-            title.style.marginBottom = '20px';
-            element.prepend(title);
-            
+
             html2pdf().set(opt).from(element).save().then(() => {
-                // Remove o título após a geração do PDF
-                element.removeChild(title);
+                // Restaura os estilos originais
+                element.style.overflow = originalStyles.overflow;
+                element.style.width = originalStyles.width;
             });
         }
 
-        // Função para exportar para Excel
-        function exportToExcel() {
-            // Cria uma string com os dados em formato CSV
-            let csv = 'Vendedor;Venda MED ETICO (R$);% VENDAS MED ETICO;% DESCONTO ETICO;Venda GENÉRICOS E SIMILARES (R$);% VENDAS GENÉRICOS E SIMILARES;% DESCONTO GENÉRICOS E SIMILARES;PONTOS (R$);Meta PONTOS (R$);Status % VENDAS MED ETICO;Status % DESCONTO ETICO;Status % VENDAS GENÉRICOS E SIMILARES;Status % DESCONTO GENÉRICOS E SIMILARES;Status PONTOS\n';
-            
-            allSellerData.forEach(seller => {
-                const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
-                const percentVendasMedEtico = seller.totalVenda > 0 ? 
-                    seller.vendaMedEtico / seller.totalVenda : 0;
-                const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
-                    vendaGenericosSimilares / seller.totalVenda : 0;
-                const percentDescontoGenericosSimilares = seller.mediaDescontoGenericosSimilares || 0;
-                
-                const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
-                const statusDescontoEtico = getStatus(seller.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
-                const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
-                const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
-                const statusPontos = getStatus(seller.totalVenda, seller.metaPontos, 'pontos');
-                
-                csv += `"${seller.vendedor || 'N/I'}";` +
-                       `"${formatCurrency(seller.vendaMedEtico).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(percentVendasMedEtico).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(seller.descontoEticoPercent).replace(/\./g, ',')}";` +
-                       `"${formatCurrency(vendaGenericosSimilares).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(percentVendasGenericosSimilares).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(percentDescontoGenericosSimilares).replace(/\./g, ',')}";` +
-                       `"${formatCurrency(seller.totalVenda).replace(/\./g, ',')}";` +
-                       `"${formatCurrency(seller.metaPontos).replace(/\./g, ',')}";` +
-                       `"${statusVendasEtico.message}";` +
-                       `"${statusDescontoEtico.message}";` +
-                       `"${statusVendasGenericos.message}";` +
-                       `"${statusDescontoGenericos.message}";` +
-                       `"${statusPontos.message}"\n`;
-            });
-            
-            // Cria um blob com os dados
-            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'dashboard_vendas.csv';
-            link.click();
+        // Mostra opções de impressão/exportação
+        function showPrintOptions() {
+            const options = `
+                <div class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                    <div class="py-1">
+                        <button onclick="window.print()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            Imprimir
+                        </button>
+                        <button onclick="exportFullDashboard()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            Exportar PDF
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const existingMenu = document.querySelector('.print-options-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+                return;
+            }
+
+            const menu = document.createElement('div');
+            menu.className = 'print-options-menu';
+            menu.innerHTML = options;
+            document.getElementById('printButton').appendChild(menu);
+
+            // Fecha o menu ao clicar fora
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!e.target.closest('.print-options-menu') && !e.target.closest('#printButton')) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 10);
         }
 
         document.getElementById('processPdfButton').addEventListener('click', async () => {
@@ -388,7 +414,7 @@
             const dashboardContainer = document.getElementById('dashboardContainer');
             const tbody = document.getElementById('spreadsheet-body');
             const filterContainer = document.getElementById('filterContainer');
-            const printActions = document.getElementById('printActions');
+            const printButton = document.getElementById('printButton');
 
             if (fileInput.files.length === 0) {
                 alert('Por favor, selecione um arquivo PDF para processar.');
@@ -402,7 +428,7 @@
             loadingIndicator.style.display = 'block';
             dashboardContainer.classList.add('hidden');
             filterContainer.classList.add('hidden');
-            printActions.classList.add('hidden');
+            printButton.classList.add('hidden');
             tbody.innerHTML = '';
             allSellerData = [];
 
@@ -434,7 +460,7 @@
                     
                     populateSellerFilter(allSellerData);
                     dashboardContainer.classList.remove('hidden');
-                    printActions.classList.remove('hidden');
+                    printButton.classList.remove('hidden');
                 } else {
                     throw new Error("Nenhum dado de vendedor encontrado.");
                 }
@@ -447,6 +473,7 @@
         });
 
         document.getElementById('sellerFilter').addEventListener('change', filterTable);
+        document.getElementById('printButton').addEventListener('click', showPrintOptions);
     </script>
 </body>
 </html>
