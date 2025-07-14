@@ -439,37 +439,31 @@ function generateCombinedSuggestions(sellers) {
         }
     };
 
-    // Verificar se temos dados de vendedores
-    if (!sellers || sellers.length === 0) {
-        return `<p class="p-4 bg-yellow-50 text-yellow-800 rounded-lg">Nenhum dado de vendedor disponível para gerar recomendações.</p>`;
-    }
-
     sellers.forEach(seller => {
         const genericosSimilares = calculateGenericosSimilares(seller);
-        const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto || 0;
+        const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto;
         const percentVendasGenericosSimilares = seller.totalVenda > 0 
             ? genericosSimilares.vendaLiquida / seller.totalVenda 
             : 0;
 
-        // 1. Baixa venda de genéricos/similares
+        // Baixa venda de genéricos/similares
         if (percentVendasGenericosSimilares < 0.70) {
             recommendations.genericos.items.add(
-                "Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
+                "👉 Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
             );
         }
 
-        // 2. Desconto alto em genéricos/similares
+        // Desconto alto em genéricos/similares
         if (percentDescontoGenericosSimilares > 0.40) {
             recommendations.desconto_genericos.items.add(
-                "Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+                "👉 Para remédios genéricos, comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
             );
         }
 
-        // 3. Desconto alto em éticos
-        const descontoEtico = seller.descontoEticoPercent || 0;
-        if (descontoEtico > 0.08) {
+        // Desconto alto em éticos
+        if ((seller.descontoEticoPercent || 0) > 0.08) {
             recommendations.eticos.items.add(
-                "Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
+                "👉 Para remédios éticos, inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
             );
         }
     });
@@ -480,15 +474,15 @@ function generateCombinedSuggestions(sellers) {
 
     // Se não houver sugestões
     if (activeRecommendations.length === 0) {
-        return `<p class="p-4 bg-green-50 text-green-800 rounded-lg">✅ Todos os indicadores estão dentro do ideal! Continue com o bom trabalho.</p>`;
+        return `<p class="p-4 bg-green-50 rounded-lg">Continue com o bom trabalho, mantendo os indicadores dentro do ideal.</p>`;
     }
 
     // Gerar HTML das recomendações
     return activeRecommendations.map(cat => `
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 class="font-bold text-lg text-blue-800 mb-2">${cat.title}</h3>
+        <div class="mb-6">
+            <h3 class="font-bold text-lg mb-2">${cat.title}</h3>
             <ul class="list-disc pl-5 space-y-2">
-                ${Array.from(cat.items).map(item => `<li class="text-blue-700">👉 ${item}</li>`).join('')}
+                ${Array.from(cat.items).map(item => `<li>${item}</li>`).join('')}
             </ul>
         </div>
     `).join('');
