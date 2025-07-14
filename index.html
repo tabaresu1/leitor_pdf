@@ -126,7 +126,6 @@
             </select>
         </div>
 
-        <!-- Área de botões de exportação -->
         <div id="exportContainer" class="flex justify-center gap-4 mb-4 hidden no-print">
             <button onclick="exportToCSV()" class="print-button bg-green-600 hover:bg-green-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -164,8 +163,7 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200" id="spreadsheet-body">
-                    <!-- Dados serão inseridos aqui via JavaScript -->
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
@@ -194,150 +192,153 @@
         }
 
         function getStatus(value, ideal, type) {
-    let className = '';
-    let message = '';
+            let className = '';
+            let message = '';
 
-    switch (type) {
-        case 'percentVendasMedEtico':
-            if (value <= 0.25) {
-                className = 'status-ideal';
-                message = 'Dentro do ideal';
-            } else if (value <= 0.30) {
-                className = 'status-below-ideal';
-                message = 'Está quase lá! Só falta ajustar um pouco.';
-            } else {
-                className = 'status-above-ideal';
-                message = 'EXTREMAMENTE acima do ideal';
+            switch (type) {
+                case 'percentVendasMedEtico':
+                    if (value <= 0.25) {
+                        className = 'status-ideal';
+                        message = 'Dentro do ideal';
+                    } else if (value <= 0.30) {
+                        className = 'status-below-ideal';
+                        message = 'Está quase lá! Só falta ajustar um pouco.';
+                    } else {
+                        className = 'status-above-ideal';
+                        message = 'EXTREMAMENTE acima do ideal';
+                    }
+                    break;
+
+                case 'percentDescontoEtico':
+                    if (value <= 0.05) {
+                        className = 'status-ideal';
+                        message = 'Dentro do ideal';
+                    } else if (value <= 0.08) {
+                        className = 'status-below-ideal';
+                        message = 'Um pouco acima do ideal';
+                    } else {
+                        className = 'status-above-ideal';
+                        message = 'Desconto EXTREMAMENTE acima do ideal';
+                    }
+                    break;
+
+                case 'percentVendasGenericosSimilares':
+                    if (value > 0.75) {
+                        className = 'status-ideal';
+                        message = 'Dentro do ideal';
+                    } else if (value >= 0.70) {
+                        className = 'status-below-ideal';
+                        message = 'Falta pouco para atingir o ideal';
+                    } else {
+                        className = 'status-above-ideal';
+                        message = 'EXTREMAMENTE abaixo do ideal';
+                    }
+                    break;
+
+                case 'percentDescontoGenericosSimilares':
+                    // A lógica para este campo é que quanto menor o desconto, melhor.
+                    // Os valores ideais são mais baixos.
+                    if (value <= 0.25) { // 25% é o "ideal" (menos que isso é melhor)
+                        className = 'status-ideal';
+                        message = 'Dentro do ideal';
+                    } else if (value <= 0.30) { // Até 30% é "quase lá"
+                        className = 'status-below-ideal';
+                        message = 'Um pouco acima do ideal';
+                    } else if (value <= 0.40) { // Até 40% é "acima do ideal"
+                        className = 'status-above-ideal';
+                        message = 'Muito acima do ideal';
+                    } else { // Acima de 40% é "extremamente acima do ideal"
+                        className = 'status-above-ideal';
+                        message = 'Desconto EXTREMAMENTE acima do ideal';
+                    }
+                    break;
+
+                case 'pontos':
+                    if (value > 2000) { // Exemplo de meta, ajuste conforme necessário
+                        className = 'status-ideal';
+                        message = 'Vendas dentro do ideal';
+                    } else if (value >= 1500) {
+                        className = 'status-below-ideal';
+                        message = 'Vendas um pouco baixas';
+                    } else {
+                        className = 'status-above-ideal';
+                        message = 'Vendas muito baixas';
+                    }
+                    break;
             }
-            break;
 
-        case 'percentDescontoEtico':
-            if (value <= 0.05) {
-                className = 'status-ideal';
-                message = 'Dentro do ideal';
-            } else if (value <= 0.08) {
-                className = 'status-below-ideal';
-                message = 'Um pouco acima do ideal';
-            } else {
-                className = 'status-above-ideal';
-                message = 'Desconto EXTREMAMENTE acima do ideal';
-            }
-            break;
-
-        case 'percentVendasGenericosSimilares':
-            if (value > 0.75) {
-                className = 'status-ideal';
-                message = 'Dentro do ideal';
-            } else if (value >= 0.70) {
-                className = 'status-below-ideal';
-                message = 'Falta pouco para atingir o ideal';
-            } else {
-                className = 'status-above-ideal';
-                message = 'EXTREMAMENTE abaixo do ideal';
-            }
-            break;
-
-        case 'percentDescontoGenericosSimilares':
-            if (value <= 0.25) {
-                className = 'status-ideal';
-                message = 'Dentro do ideal';
-            } else if (value <= 0.30) {
-                className = 'status-below-ideal';
-                message = 'Um pouco acima do ideal';
-            } else if (value <= 0.40) {
-                className = 'status-above-ideal';
-                message = 'Muito acima do ideal';
-            } else {
-                className = 'status-above-ideal';
-                message = 'Desconto EXTREMAMENTE acima do ideal';
-            }
-            break;
-
-        case 'pontos':
-            if (value > 2000) {
-                className = 'status-ideal';
-                message = 'Vendas dentro do ideal';
-            } else if (value >= 1500) {
-                className = 'status-below-ideal';
-                message = 'Vendas um pouco baixas';
-            } else {
-                className = 'status-above-ideal';
-                message = 'Vendas muito baixas';
-            }
-            break;
-    }
-
-    return { className, message };
-}
+            return { className, message };
+        }
 
 
         function addSellerRow(sellerData) {
-    const tbody = document.getElementById('spreadsheet-body');
-    const vendaGenericosSimilares = (sellerData.vendaMedGene || 0) + (sellerData.vendaMedSimil || 0);
-    const percentVendasMedEtico = sellerData.totalVenda > 0 ? 
-        sellerData.vendaMedEtico / sellerData.totalVenda : 0;
-    const percentVendasGenericosSimilares = sellerData.totalVenda > 0 ? 
-        vendaGenericosSimilares / sellerData.totalVenda : 0;
-    const percentDescontoGenericosSimilares = sellerData.mediaDescontoGenericosSimilares || 0;
+            const tbody = document.getElementById('spreadsheet-body');
+            const vendaGenericosSimilares = (sellerData.vendaMedGene || 0) + (sellerData.vendaMedSimil || 0);
+            const descontoGenericosSimilaresValor = (sellerData.descontoMedGene || 0) + (sellerData.descontoMedSimil || 0); [cite_start]// Soma dos valores de desconto [cite: 7]
+            
+            // Calculando TOTAL BRUTO conforme a sua especificação (A + C)
+            const totalBrutoGenericosSimilares = (sellerData.vendaMedGene || 0) + (sellerData.vendaMedSimil || 0); 
 
-    const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
-    const statusDescontoEtico = getStatus(sellerData.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
-    const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
-    const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
-    const statusPontos = getStatus(sellerData.totalVenda, sellerData.metaPontos, 'pontos');
+            // Calculando % DESCONTO GENÉRICO + SIMILAR conforme a sua especificação (B + D) / TOTAL BRUTO
+            const percentDescontoGenericosSimilares = totalBrutoGenericosSimilares > 0 
+                ? descontoGenericosSimilaresValor / totalBrutoGenericosSimilares 
+                : 0;
 
-    const row = document.createElement('tr');
-    row.className = 'hover:bg-gray-50';
-    row.dataset.vendedor = sellerData.vendedor || '';
-    row.innerHTML = `
-        <td class="px-6 py-4 text-sm font-medium text-gray-900 col-vendedor">${sellerData.vendedor || 'N/I'}</td>
-        
-        <!-- Coluna Venda MED ETICO -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
-            <div>${formatCurrency(sellerData.vendaMedEtico)}</div>
-        </td>
-        
-        <!-- Coluna % VENDAS MED ETICO -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
-            <div>${formatPercentage(percentVendasMedEtico)}</div>
-            <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
-        </td>
-        
-        <!-- Coluna % DESCONTO ETICO -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
-            <div>${formatPercentage(sellerData.descontoEticoPercent)}</div>
-            <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
-        </td>
-        
-        <!-- Coluna Venda GENÉRICOS E SIMILARES -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
-            <div>${formatCurrency(vendaGenericosSimilares)}</div>
-        </td>
-        
-        <!-- Coluna % VENDAS GENÉRICOS E SIMILARES -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
-            <div>${formatPercentage(percentVendasGenericosSimilares)}</div>
-            <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
-        </td>
-        
-        <!-- Coluna % DESCONTO GENÉRICOS E SIMILARES -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
-            <div>${formatPercentage(percentDescontoGenericosSimilares)}</div>
-            <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
-        </td>
-        
-        <!-- Coluna PONTOS -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
-            <div>${formatCurrency(sellerData.totalVenda)}</div>
-        </td>
-        
-        <!-- Coluna Meta PONTOS -->
-        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
-            <div>${formatCurrency(sellerData.metaPontos)}</div>
-        </td>
-    `;
-    tbody.appendChild(row);
-}
+            const percentVendasMedEtico = sellerData.totalVenda > 0 ? 
+                sellerData.vendaMedEtico / sellerData.totalVenda : 0;
+            const percentVendasGenericosSimilares = sellerData.totalVenda > 0 ? 
+                vendaGenericosSimilares / sellerData.totalVenda : 0;
+            
+            const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
+            const statusDescontoEtico = getStatus(sellerData.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
+            const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
+            const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
+            const statusPontos = getStatus(sellerData.totalVenda, sellerData.metaPontos, 'pontos');
+
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.dataset.vendedor = sellerData.vendedor || '';
+            row.innerHTML = `
+                <td class="px-6 py-4 text-sm font-medium text-gray-900 col-vendedor">${sellerData.vendedor || 'N/I'}</td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+                    <div>${formatCurrency(sellerData.vendaMedEtico)}</div>
+                </td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+                    <div>${formatPercentage(percentVendasMedEtico)}</div>
+                    <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
+                </td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+                    <div>${formatPercentage(sellerData.descontoEticoPercent)}</div>
+                    <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
+                </td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+                    <div>${formatCurrency(vendaGenericosSimilares)}</div>
+                </td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+                    <div>${formatPercentage(percentVendasGenericosSimilares)}</div>
+                    <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
+                </td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+                    <div>${formatPercentage(percentDescontoGenericosSimilares)}</div>
+                    <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
+                </td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+                    <div>${formatCurrency(sellerData.totalVenda)}</div>
+                </td>
+                
+                <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+                    <div>${formatCurrency(sellerData.metaPontos)}</div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
 
         function populateSellerFilter(sellers) {
             const sellerFilter = document.getElementById('sellerFilter');
@@ -376,11 +377,21 @@
             
             allSellerData.forEach(seller => {
                 const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
+                [cite_start];
+                const descontoGenericosSimilaresValor = (seller.descontoMedGene || 0) + (seller.descontoMedSimil || 0); // Soma dos valores de desconto [cite: 7]
+                
+                // Calculando TOTAL BRUTO conforme a sua especificação (A + C)
+                const totalBrutoGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0); 
+
+                // Calculando % DESCONTO GENÉRICO + SIMILAR conforme a sua especificação (B + D) / TOTAL BRUTO
+                const percentDescontoGenericosSimilares = totalBrutoGenericosSimilares > 0 
+                    ? descontoGenericosSimilaresValor / totalBrutoGenericosSimilares 
+                    : 0;
+
                 const percentVendasMedEtico = seller.totalVenda > 0 ? 
                     seller.vendaMedEtico / seller.totalVenda : 0;
                 const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
                     vendaGenericosSimilares / seller.totalVenda : 0;
-                const percentDescontoGenericosSimilares = seller.mediaDescontoGenericosSimilares || 0;
                 
                 const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
                 const statusDescontoEtico = getStatus(seller.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
@@ -389,19 +400,19 @@
                 const statusPontos = getStatus(seller.totalVenda, seller.metaPontos, 'pontos');
                 
                 csv += `"${seller.vendedor || 'N/I'}";` +
-                       `"${formatCurrency(seller.vendaMedEtico).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(percentVendasMedEtico).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(seller.descontoEticoPercent).replace(/\./g, ',')}";` +
-                       `"${formatCurrency(vendaGenericosSimilares).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(percentVendasGenericosSimilares).replace(/\./g, ',')}";` +
-                       `"${formatPercentage(percentDescontoGenericosSimilares).replace(/\./g, ',')}";` +
-                       `"${formatCurrency(seller.totalVenda).replace(/\./g, ',')}";` +
-                       `"${formatCurrency(seller.metaPontos).replace(/\./g, ',')}";` +
-                       `"${statusVendasEtico.message}";` +
-                       `"${statusDescontoEtico.message}";` +
-                       `"${statusVendasGenericos.message}";` +
-                       `"${statusDescontoGenericos.message}";` +
-                       `"${statusPontos.message}"\n`;
+                        `"${formatCurrency(seller.vendaMedEtico).replace(/\./g, ',')}";` +
+                        `"${formatPercentage(percentVendasMedEtico).replace(/\./g, ',')}";` +
+                        `"${formatPercentage(seller.descontoEticoPercent).replace(/\./g, ',')}";` +
+                        `"${formatCurrency(vendaGenericosSimilares).replace(/\./g, ',')}";` +
+                        `"${formatPercentage(percentVendasGenericosSimilares).replace(/\./g, ',')}";` +
+                        `"${formatPercentage(percentDescontoGenericosSimilares).replace(/\./g, ',')}";` +
+                        `"${formatCurrency(seller.totalVenda).replace(/\./g, ',')}";` +
+                        `"${formatCurrency(seller.metaPontos).replace(/\./g, ',')}";` +
+                        `"${statusVendasEtico.message}";` +
+                        `"${statusDescontoEtico.message}";` +
+                        `"${statusVendasGenericos.message}";` +
+                        `"${statusDescontoGenericos.message}";` +
+                        `"${statusPontos.message}"\n`;
             });
             
             const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -412,216 +423,233 @@
         }
 
         function generateSuggestions(seller) {
-    const sugestoes = [];
+            const sugestoes = [];
 
-    if ((seller.descontoEticoPercent || 0) > 0.08) {
-        sugestoes.push(
-            "Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. " +
-            "Com desconto elevado, essas vendas ficam no vermelho com os impostos."
-        );
-    }
+            if ((seller.descontoEticoPercent || 0) > 0.08) {
+                sugestoes.push(
+                    "Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. " +
+                    "Com desconto elevado, essas vendas ficam no vermelho com os impostos."
+                );
+            }
 
-    const percentVendasGenericosSimilares = seller.totalVenda > 0 
-        ? ((seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0)) / seller.totalVenda 
-        : 0;
-    
-    if (percentVendasGenericosSimilares < 0.70) {
-        sugestoes.push(
-            "Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
-        );
-    }
-
-    if ((seller.mediaDescontoGenericosSimilares || 0) > 0.40) {
-        sugestoes.push(
-            "Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
-        );
-    }
-
-    if (sugestoes.length === 0) {
-        sugestoes.push("Continue com o bom trabalho, mantendo os indicadores dentro do ideal.");
-    }
-
-    return `
-        <div style="margin-top: 15px; font-size: 9pt; color: #333;">
-            <strong>Sugestões e Motivações:</strong>
-            <ul style="margin-top: 5px; padding-left: 18px;">
-                ${sugestoes.map(s => `<li style="margin-bottom: 6px;">${s}</li>`).join('')}
-            </ul>
-        </div>
-    `;
-}
-
-function generatePrintVersion() {
-    const selectedVendedor = document.getElementById('sellerFilter').value;
-    const printData = selectedVendedor === 'all' 
-        ? allSellerData 
-        : allSellerData.filter(seller => seller.vendedor === selectedVendedor);
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Relatório de Desempenho - ${new Date().toLocaleDateString()}</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 10px;
-                }
-                .print-header {
-                    text-align: center;
-                    margin-bottom: 15px;
-                }
-                .print-header h1 {
-                    font-size: 16pt;
-                    margin-bottom: 5px;
-                }
-                .print-header p {
-                    font-size: 10pt;
-                    color: #555;
-                }
-                .print-version table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 8pt;
-                }
-                .print-version th {
-                    background-color: #f3f4f6;
-                    padding: 6px;
-                    text-align: left;
-                    border: 1px solid #ddd;
-                    font-weight: bold;
-                }
-                .print-version td {
-                    padding: 5px;
-                    border: 1px solid #ddd;
-                    vertical-align: top;
-                }
-                .print-version td div {
-                    margin: 2px 0;
-                    line-height: 1.3;
-                }
-                .status-ideal { color: #10b981; }
-                .status-above-ideal { color: #ef4444; }
-                .status-below-ideal { color: #f97316; }
-                .print-footer {
-                    text-align: center;
-                    margin-top: 15px;
-                    font-size: 8pt;
-                    color: #777;
-                }
-                .print-version td div:last-child {
-                    font-size: 7pt;
-                    margin-top: 3px;
-                }
-                @page {
-                    size: A4 landscape;
-                    margin: 5mm;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="print-header">
-                <h1>Relatório de Desempenho de Vendas</h1>
-                <p>${selectedVendedor !== 'all' ? `Vendedor: ${selectedVendedor}` : 'Todos os Vendedores'}</p>
-                <p>${new Date().toLocaleDateString('pt-BR')}</p>
-            </div>
+            const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
+            const percentVendasGenericosSimilares = seller.totalVenda > 0 
+                ? vendaGenericosSimilares / seller.totalVenda 
+                : 0;
             
-            <div class="print-version">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Vendedor</th>
-                            <th>Venda MED</th>
-                            <th>% MED</th>
-                            <th>% Desc MED</th>
-                            <th>Venda GEN</th>
-                            <th>% GEN</th>
-                            <th>% Desc GEN</th>
-                            <th>Pontos</th>
-                            <th>Meta</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${generatePrintRows(printData)}
-                    </tbody>
-                </table>
+            if (percentVendasGenericosSimilares < 0.70) {
+                sugestoes.push(
+                    "Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
+                );
+            }
 
-                ${printData.map(seller => generateSuggestions(seller)).join('')}
-            </div>
-            
-            <div class="print-footer">
-                Relatório gerado em ${new Date().toLocaleString('pt-BR')}
-            </div>
-            
-            <script>
-                window.onload = function() {
-                    setTimeout(function() {
-                        window.print();
-                        window.close();
-                    }, 200);
-                };
-            <\/script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-}
+            const descontoGenericosSimilaresValor = (seller.descontoMedGene || 0) + (seller.descontoMedSimil || 0); [cite_start]// Soma dos valores de desconto [cite: 7]
+            const totalBrutoGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
+            const percentDescontoGenericosSimilares = totalBrutoGenericosSimilares > 0 
+                ? descontoGenericosSimilaresValor / totalBrutoGenericosSimilares 
+                : 0;
+
+            if (percentDescontoGenericosSimilares > 0.40) {
+                sugestoes.push(
+                    "Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+                );
+            }
+
+            if (sugestoes.length === 0) {
+                sugestoes.push("Continue com o bom trabalho, mantendo os indicadores dentro do ideal.");
+            }
+
+            return `
+                <div style="margin-top: 15px; font-size: 9pt; color: #333;">
+                    <strong>Sugestões e Motivações:</strong>
+                    <ul style="margin-top: 5px; padding-left: 18px;">
+                        ${sugestoes.map(s => `<li style="margin-bottom: 6px;">${s}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function generatePrintVersion() {
+            const selectedVendedor = document.getElementById('sellerFilter').value;
+            const printData = selectedVendedor === 'all' 
+                ? allSellerData 
+                : allSellerData.filter(seller => seller.vendedor === selectedVendedor);
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Relatório de Desempenho - ${new Date().toLocaleDateString()}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 10px;
+                        }
+                        .print-header {
+                            text-align: center;
+                            margin-bottom: 15px;
+                        }
+                        .print-header h1 {
+                            font-size: 16pt;
+                            margin-bottom: 5px;
+                        }
+                        .print-header p {
+                            font-size: 10pt;
+                            color: #555;
+                        }
+                        .print-version table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            font-size: 8pt;
+                        }
+                        .print-version th {
+                            background-color: #f3f4f6;
+                            padding: 6px;
+                            text-align: left;
+                            border: 1px solid #ddd;
+                            font-weight: bold;
+                        }
+                        .print-version td {
+                            padding: 5px;
+                            border: 1px solid #ddd;
+                            vertical-align: top;
+                        }
+                        .print-version td div {
+                            margin: 2px 0;
+                            line-height: 1.3;
+                        }
+                        .status-ideal { color: #10b981; }
+                        .status-above-ideal { color: #ef4444; }
+                        .status-below-ideal { color: #f97316; }
+                        .print-footer {
+                            text-align: center;
+                            margin-top: 15px;
+                            font-size: 8pt;
+                            color: #777;
+                        }
+                        .print-version td div:last-child {
+                            font-size: 7pt;
+                            margin-top: 3px;
+                        }
+                        @page {
+                            size: A4 landscape;
+                            margin: 5mm;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-header">
+                        <h1>Relatório de Desempenho de Vendas</h1>
+                        <p>${selectedVendedor !== 'all' ? `Vendedor: ${selectedVendedor}` : 'Todos os Vendedores'}</p>
+                        <p>${new Date().toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    
+                    <div class="print-version">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Vendedor</th>
+                                    <th>Venda MED</th>
+                                    <th>% MED</th>
+                                    <th>% Desc MED</th>
+                                    <th>Venda GEN</th>
+                                    <th>% GEN</th>
+                                    <th>% Desc GEN</th>
+                                    <th>Pontos</th>
+                                    <th>Meta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generatePrintRows(printData)}
+                            </tbody>
+                        </table>
+
+                        ${printData.map(seller => generateSuggestions(seller)).join('')}
+                    </div>
+                    
+                    <div class="print-footer">
+                        Relatório gerado em ${new Date().toLocaleString('pt-BR')}
+                    </div>
+                    
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                                window.close();
+                            }, 200);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
 
 
-function generatePrintRows(data = allSellerData) {
-    return data.map(seller => {
-        const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
-        const percentVendasMedEtico = seller.totalVenda > 0 ? 
-            seller.vendaMedEtico / seller.totalVenda : 0;
-        const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
-            vendaGenericosSimilares / seller.totalVenda : 0;
-        const percentDescontoGenericosSimilares = seller.mediaDescontoGenericosSimilares || 0;
+        function generatePrintRows(data = allSellerData) {
+            return data.map(seller => {
+                const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
+                [cite_start];
+                const descontoGenericosSimilaresValor = (seller.descontoMedGene || 0) + (seller.descontoMedSimil || 0); // Soma dos valores de desconto [cite: 7]
+                
+                // Calculando TOTAL BRUTO conforme a sua especificação (A + C)
+                const totalBrutoGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0); 
 
-        const statusVendasEtico = getStatus(percentVendasMedEtico, null, 'percentVendasMedEtico');
-        const statusDescontoEtico = getStatus(seller.descontoEticoPercent, null, 'percentDescontoEtico');
-        const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, null, 'percentVendasGenericosSimilares');
-        const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, null, 'percentDescontoGenericosSimilares');
-        const statusPontos = getStatus(seller.totalVenda, null, 'pontos');
+                // Calculando % DESCONTO GENÉRICO + SIMILAR conforme a sua especificação (B + D) / TOTAL BRUTO
+                const percentDescontoGenericosSimilares = totalBrutoGenericosSimilares > 0 
+                    ? descontoGenericosSimilaresValor / totalBrutoGenericosSimilares 
+                    : 0;
 
-        return `
-            <tr>
-                <td>${seller.vendedor || 'N/I'}</td>
-                <td>${Math.round(seller.vendaMedEtico)}</td>
-                <td>
-                    ${formatPercentage(percentVendasMedEtico)}
-                    <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
-                </td>
-                <td>
-                    ${formatPercentage(seller.descontoEticoPercent)}
-                    <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
-                </td>
-                <td>${Math.round(vendaGenericosSimilares)}</td>
-                <td>
-                    ${formatPercentage(percentVendasGenericosSimilares)}
-                    <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
-                </td>
-                <td>
-                    ${formatPercentage(percentDescontoGenericosSimilares)}
-                    <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
-                </td>
-                <td>${Math.round(seller.totalVenda)}</td>
-                <td>
-                    ${Math.round(seller.metaPontos)}
-                    <div class="${statusPontos.className}">${statusPontos.message}</div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
+                const percentVendasMedEtico = seller.totalVenda > 0 ? 
+                    seller.vendaMedEtico / seller.totalVenda : 0;
+                const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
+                    vendaGenericosSimilares / seller.totalVenda : 0;
+
+                const statusVendasEtico = getStatus(percentVendasMedEtico, null, 'percentVendasMedEtico');
+                const statusDescontoEtico = getStatus(seller.descontoEticoPercent, null, 'percentDescontoEtico');
+                const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, null, 'percentVendasGenericosSimilares');
+                const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, null, 'percentDescontoGenericosSimilares');
+                const statusPontos = getStatus(seller.totalVenda, null, 'pontos');
+
+                return `
+                    <tr>
+                        <td>${seller.vendedor || 'N/I'}</td>
+                        <td>${Math.round(seller.vendaMedEtico)}</td>
+                        <td>
+                            ${formatPercentage(percentVendasMedEtico)}
+                            <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
+                        </td>
+                        <td>
+                            ${formatPercentage(seller.descontoEticoPercent)}
+                            <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
+                        </td>
+                        <td>${Math.round(vendaGenericosSimilares)}</td>
+                        <td>
+                            ${formatPercentage(percentVendasGenericosSimilares)}
+                            <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
+                        </td>
+                        <td>
+                            ${formatPercentage(percentDescontoGenericosSimilares)}
+                            <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
+                        </td>
+                        <td>${Math.round(seller.totalVenda)}</td>
+                        <td>
+                            ${Math.round(seller.metaPontos)}
+                            <div class="${statusPontos.className}">${statusPontos.message}</div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
 
-document.getElementById('processPdfButton').addEventListener('click', async () => {
-    const fileInput = document.getElementById('pdfUpload');
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const dashboardContainer = document.getElementById('dashboardContainer');
-    const tbody = document.getElementById('spreadsheet-body');
+        document.getElementById('processPdfButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('pdfUpload');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const dashboardContainer = document.getElementById('dashboardContainer');
+            const tbody = document.getElementById('spreadsheet-body');
             const filterContainer = document.getElementById('filterContainer');
             const exportContainer = document.getElementById('exportContainer');
             const printBtn = document.getElementById('printOptimizedBtn');
@@ -660,8 +688,8 @@ document.getElementById('processPdfButton').addEventListener('click', async () =
                     allSellerData = result.data.map(seller => ({
                         ...seller,
                         totalVenda: (seller.vendaMedEtico || 0) + 
-                                   (seller.vendaMedGene || 0) + 
-                                   (seller.vendaMedSimil || 0)
+                                    (seller.vendaMedGene || 0) + 
+                                    (seller.vendaMedSimil || 0)
                     }));
                     
                     allSellerData.forEach(seller => {
