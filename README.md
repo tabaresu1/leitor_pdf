@@ -146,7 +146,7 @@ pip install --upgrade camelot-py
 ## 📄 Licença
 
 Projeto desenvolvido para **Grupo SP © 2025**  
-Contato: [equipe@empresa.com](mailto:equipe@empresa.com)
+Contato: [grupospsocialmedia@gmail.com](mailto:grupospsocialmedia@gmail.com)
 
 ---
 
