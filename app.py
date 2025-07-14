@@ -14,13 +14,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def parse_pdf_data(raw_data):
     vendedores = defaultdict(lambda: {
+        'vendedor': None,
         'vendaMedEtico': 0,
         'descontoEticoPercent': 0,
+        'descontoMedGene': 0,  # Campo adicionado
+        'descontoMedSimil': 0, # Campo adicionado
         'vendaMedGene': 0,
-        'percentDescontoGene': 0,  # % desconto genérico
         'vendaMedSimil': 0,
-        'percentDescontoSimil': 0,  # % desconto similar
-        'mediaDescontoGenericosSimilares': 0,
         'totalVenda': 0,
         'metaPontos': 100000
     })
@@ -34,49 +34,54 @@ def parse_pdf_data(raw_data):
             match = re.search(r'Usuário:\s*([A-Za-zÀ-ú\s\-0-9]+)', row_str)
             if match:
                 current_vendedor = match.group(1).strip()
-                if 'KELLY PEREIRA' in current_vendedor.upper():
-                    continue
+                if 'KELLY PEREIRA' in current_vendedor.upper() and 'ALDO-37' not in current_vendedor.upper():
+                    continue 
                 vendedores[current_vendedor]['vendedor'] = current_vendedor
             continue
 
-        if current_vendedor and 'PRINCIPAL >' in row_str and len(row) >= 6:
+        if current_vendedor and 'PRINCIPAL >' in row_str and len(row) >= 5:
             try:
                 categoria = row[0].split('>')[1].strip()
+                venda_valor = float(str(row[2]).replace('.', '').replace(',', '.'))
                 
-                # Extrai porcentagem de desconto (coluna 5)
-                percent_str = str(row[5]).replace('%', '').replace(',', '.').strip()
-                percent_desconto = float(percent_str) / 100 if percent_str else 0
-
+                # Extração de desconto simplificada e robusta
+                discount_column = str(row[4]).strip()
+                discount_parts = discount_column.split('\n')
+                
+                # Valor do desconto sempre será a última parte
+                discount_value = 0.0
+                if discount_parts:
+                    # Pega o último elemento não vazio
+                    last_part = [p for p in discount_parts if p][-1]
+                    discount_value = float(last_part.replace('.', '').replace(',', '.'))
+                
                 if 'MED ETICO' in categoria:
-                    vendedores[current_vendedor]['vendaMedEtico'] = float(str(row[2]).replace('.', '').replace(',', '.'))
-                    vendedores[current_vendedor]['descontoEticoPercent'] = percent_desconto
+                    vendedores[current_vendedor]['vendaMedEtico'] = venda_valor
+                    # Para éticos usamos percentual (como estava)
+                    vendedores[current_vendedor]['descontoEticoPercent'] = discount_value / 100
                 
                 elif 'MED GENE' in categoria:
-                    vendedores[current_vendedor]['vendaMedGene'] = float(str(row[2]).replace('.', '').replace(',', '.'))
-                    vendedores[current_vendedor]['percentDescontoGene'] = percent_desconto
+                    vendedores[current_vendedor]['vendaMedGene'] = venda_valor
+                    vendedores[current_vendedor]['descontoMedGene'] = discount_value
                 
                 elif 'MED SIMIL' in categoria:
-                    vendedores[current_vendedor]['vendaMedSimil'] = float(str(row[2]).replace('.', '').replace(',', '.'))
-                    vendedores[current_vendedor]['percentDescontoSimil'] = percent_desconto
+                    vendedores[current_vendedor]['vendaMedSimil'] = venda_valor
+                    vendedores[current_vendedor]['descontoMedSimil'] = discount_value
 
             except Exception as e:
                 print(f"Erro na linha: {row} | Erro: {str(e)}")
                 continue
 
-    # Calcula médias após processar todas as linhas
+    # Calcula totais
     for vendedor in vendedores.values():
-        vendedor['totalVenda'] = vendedor['vendaMedEtico'] + vendedor['vendaMedGene'] + vendedor['vendaMedSimil']
-        
-        # Calcula média SIMPLES dos descontos (GENÉRICOS + SIMILARES)
-        valores_validos = []
-        if vendedor['percentDescontoGene'] > 0:
-            valores_validos.append(vendedor['percentDescontoGene'])
-        if vendedor['percentDescontoSimil'] > 0:
-            valores_validos.append(vendedor['percentDescontoSimil'])
-        
-        vendedor['mediaDescontoGenericosSimilares'] = sum(valores_validos)/len(valores_validos) if valores_validos else 0
+        if vendedor['vendedor']:
+            vendedor['totalVenda'] = (
+                vendedor['vendaMedEtico'] + 
+                vendedor['vendaMedGene'] + 
+                vendedor['vendaMedSimil']
+            )
 
-    return [v for v in vendedores.values() if v['vendedor']]  # Filtra vendedores vazios
+    return [v for v in vendedores.values() if v['vendedor']]
 
 @app.route('/upload-pdf', methods=['POST'])
 def upload_pdf():
@@ -109,7 +114,7 @@ def upload_pdf():
         parsed_data = parse_pdf_data(all_data)
 
         if not parsed_data:
-            raise ValueError("Nenhum vendedor válido encontrado")
+            raise ValueError("Nenhum vendedor válido encontrado após a análise")
 
         return jsonify({
             "success": True,
@@ -117,8 +122,12 @@ def upload_pdf():
         })
 
     except Exception as e:
+        # Imprime o erro completo para depuração no console do servidor
+        import traceback
+        print(f"Erro durante o processamento do PDF: {str(e)}")
+        print(traceback.format_exc()) # Imprime o stack trace completo
         return jsonify({
-            "error": f"Erro ao processar PDF: {str(e)}",
+            "error": f"Erro ao processar PDF: {str(e)}. Verifique o formato do seu PDF ou a estrutura das tabelas.",
             "details": str(e)
         }), 500
 
