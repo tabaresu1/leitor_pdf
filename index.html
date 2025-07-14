@@ -421,7 +421,7 @@ function exportToCSV() {
 }
 
 // =============================================
-// FUNÇÕES PARA GERAÇÃO DE RELATÓRIOS
+// FUNÇÃO PARA GERAR SUGESTÕES COMBINADAS (ATUALIZADA)
 // =============================================
 function generateCombinedSuggestions(sellers) {
     const recommendations = {
@@ -439,31 +439,37 @@ function generateCombinedSuggestions(sellers) {
         }
     };
 
+    // Verificar se temos dados de vendedores
+    if (!sellers || sellers.length === 0) {
+        return `<p class="p-4 bg-yellow-50 text-yellow-800 rounded-lg">Nenhum dado de vendedor disponível para gerar recomendações.</p>`;
+    }
+
     sellers.forEach(seller => {
         const genericosSimilares = calculateGenericosSimilares(seller);
-        const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto;
+        const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto || 0;
         const percentVendasGenericosSimilares = seller.totalVenda > 0 
             ? genericosSimilares.vendaLiquida / seller.totalVenda 
             : 0;
 
-        // Baixa venda de genéricos/similares
+        // 1. Baixa venda de genéricos/similares
         if (percentVendasGenericosSimilares < 0.70) {
             recommendations.genericos.items.add(
-                "👉 Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
+                "Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
             );
         }
 
-        // Desconto alto em genéricos/similares
+        // 2. Desconto alto em genéricos/similares
         if (percentDescontoGenericosSimilares > 0.40) {
             recommendations.desconto_genericos.items.add(
-                "👉 Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+                "Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
             );
         }
 
-        // Desconto alto em éticos
-        if ((seller.descontoEticoPercent || 0) > 0.08) {
+        // 3. Desconto alto em éticos
+        const descontoEtico = seller.descontoEticoPercent || 0;
+        if (descontoEtico > 0.08) {
             recommendations.eticos.items.add(
-                "👉 Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
+                "Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
             );
         }
     });
@@ -474,15 +480,15 @@ function generateCombinedSuggestions(sellers) {
 
     // Se não houver sugestões
     if (activeRecommendations.length === 0) {
-        return `<p class="p-4 bg-green-50 rounded-lg">Continue com o bom trabalho, mantendo os indicadores dentro do ideal.</p>`;
+        return `<p class="p-4 bg-green-50 text-green-800 rounded-lg">✅ Todos os indicadores estão dentro do ideal! Continue com o bom trabalho.</p>`;
     }
 
     // Gerar HTML das recomendações
     return activeRecommendations.map(cat => `
-        <div class="mb-6">
-            <h3 class="font-bold text-lg mb-2">${cat.title}</h3>
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 class="font-bold text-lg text-blue-800 mb-2">${cat.title}</h3>
             <ul class="list-disc pl-5 space-y-2">
-                ${Array.from(cat.items).map(item => `<li>${item}</li>`).join('')}
+                ${Array.from(cat.items).map(item => `<li class="text-blue-700">👉 ${item}</li>`).join('')}
             </ul>
         </div>
     `).join('');
@@ -632,6 +638,16 @@ function generatePrintVersion() {
                     </tbody>
                 </table>
                 
+                <!-- Seção de Recomendações -->
+                <div id="recomendacoesContainer" class="mt-8 bg-white p-6 rounded-xl shadow-lg hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Recomendações Estratégicas</h2>
+                    <div id="dynamicRecommendations">
+                        <!-- As recomendações serão geradas dinamicamente aqui -->
+                    </div>
+                </div>
+
+</div>
+                
                 <!-- CORREÇÃO: Mostrar sugestões apenas uma vez, no final -->
                 <div class="suggestions-container">
                     <h3>Sugestões e Motivações</h3>
@@ -759,6 +775,9 @@ document.getElementById('processPdfButton').addEventListener('click', async () =
             populateSellerFilter(allSellerData);
             dashboardContainer.classList.remove('hidden');
             exportContainer.classList.remove('hidden');
+            const recommendationsHtml = generateCombinedSuggestions(allSellerData);
+            document.getElementById('dynamicRecommendations').innerHTML = recommendationsHtml;
+            document.getElementById('recomendacoesContainer').classList.remove('hidden');
             
             // Configura o botão de impressão após carregar os dados
             printBtn.onclick = generatePrintVersion;
