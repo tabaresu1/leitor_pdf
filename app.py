@@ -16,9 +16,9 @@ def parse_pdf_data(raw_data):
     vendedores = defaultdict(lambda: {
         'vendedor': None,
         'vendaMedEtico': 0,
-        'descontoEticoPercent': 0,
-        'descontoMedGene': 0,  # Campo adicionado
-        'descontoMedSimil': 0, # Campo adicionado
+        'descontoEticoPercent': 0,  # Já em formato decimal (ex: 15.5% = 0.155)
+        'descontoMedGene': 0,       # Valor absoluto do desconto para genéricos
+        'descontoMedSimil': 0,      # Valor absoluto do desconto para similares
         'vendaMedGene': 0,
         'vendaMedSimil': 0,
         'totalVenda': 0,
@@ -39,34 +39,35 @@ def parse_pdf_data(raw_data):
                 vendedores[current_vendedor]['vendedor'] = current_vendedor
             continue
 
-        if current_vendedor and 'PRINCIPAL >' in row_str and len(row) >= 5:
+        if current_vendedor and 'PRINCIPAL >' in row_str and len(row) >= 6:  # Agora precisamos da coluna 5 (índice 5)
             try:
                 categoria = row[0].split('>')[1].strip()
                 venda_valor = float(str(row[2]).replace('.', '').replace(',', '.'))
                 
-                # Extração de desconto simplificada e robusta
-                discount_column = str(row[4]).strip()
-                discount_parts = discount_column.split('\n')
+                # Coluna 4: Valor absoluto do desconto (índice 4)
+                # Coluna 5: Percentual de desconto (índice 5)
+                valor_desconto = 0.0
+                percentual_desconto = 0.0
                 
-                # Valor do desconto sempre será a última parte
-                discount_value = 0.0
-                if discount_parts:
-                    # Pega o último elemento não vazio
-                    last_part = [p for p in discount_parts if p][-1]
-                    discount_value = float(last_part.replace('.', '').replace(',', '.'))
+                # Extrai valor absoluto do desconto (coluna 4)
+                if str(row[4]).strip():
+                    valor_desconto = float(str(row[4]).strip().replace('.', '').replace(',', '.'))
                 
+                # Extrai percentual de desconto (coluna 5)
+                if str(row[5]).strip():
+                    percentual_desconto = float(str(row[5]).strip().replace(',', '.')) / 100.0
+
                 if 'MED ETICO' in categoria:
                     vendedores[current_vendedor]['vendaMedEtico'] = venda_valor
-                    # Para éticos usamos percentual (como estava)
-                    vendedores[current_vendedor]['descontoEticoPercent'] = discount_value / 100
+                    vendedores[current_vendedor]['descontoEticoPercent'] = percentual_desconto
                 
                 elif 'MED GENE' in categoria:
                     vendedores[current_vendedor]['vendaMedGene'] = venda_valor
-                    vendedores[current_vendedor]['descontoMedGene'] = discount_value
+                    vendedores[current_vendedor]['descontoMedGene'] = valor_desconto
                 
                 elif 'MED SIMIL' in categoria:
                     vendedores[current_vendedor]['vendaMedSimil'] = venda_valor
-                    vendedores[current_vendedor]['descontoMedSimil'] = discount_value
+                    vendedores[current_vendedor]['descontoMedSimil'] = valor_desconto
 
             except Exception as e:
                 print(f"Erro na linha: {row} | Erro: {str(e)}")
