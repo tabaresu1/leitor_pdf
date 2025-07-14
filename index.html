@@ -34,10 +34,9 @@
             font-weight: 600;
             color: #374151;
         }
-        .col-vendedor { min-width: 150px; }
-        .col-valores { min-width: 120px; }
-        .col-percent { min-width: 100px; }
-        .col-status { min-width: 180px; }
+        .col-vendedor { min-width: 180px; }
+        .col-valores { min-width: 140px; }
+        .col-percent { min-width: 120px; }
 
         .status-ideal {
             color: #10b981;
@@ -89,10 +88,20 @@
         .print-button:hover {
             background-color: #4338ca;
         }
+        @media (max-width: 1800px) {
+            body {
+                padding: 10px;
+                overflow-x: auto; /* Garante que a barra de rolagem apareça */
+            }
+            .container {
+                max-width: none;
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 <body class="p-4 bg-gray-100">
-    <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg max-w-6xl w-full">
+    <div class="container mx-auto p-8 bg-white rounded-xl shadow-lg w-full">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-800">Dashboard de Desempenho de Vendas</h1>
         </div>
@@ -367,11 +376,6 @@
         ? allSellerData 
         : allSellerData.filter(seller => seller.vendedor === selectedVendedor);
 
-    if (printData.length === 0) {
-        alert('Nenhum dado disponível para impressão');
-        return;
-    }
-
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <!DOCTYPE html>
@@ -383,9 +387,6 @@
                     font-family: Arial, sans-serif;
                     margin: 0;
                     padding: 10px;
-                }
-                td div {
-                    margin: 2px 0;
                 }
                 .print-header {
                     text-align: center;
@@ -403,7 +404,6 @@
                     width: 100%;
                     border-collapse: collapse;
                     font-size: 8pt;
-                    page-break-inside: avoid;
                 }
                 .print-version th {
                     background-color: #f3f4f6;
@@ -415,6 +415,11 @@
                 .print-version td {
                     padding: 5px;
                     border: 1px solid #ddd;
+                    vertical-align: top;
+                }
+                .print-version td div {
+                    margin: 2px 0;
+                    line-height: 1.3;
                 }
                 .status-ideal { color: #10b981; }
                 .status-above-ideal { color: #ef4444; }
@@ -424,6 +429,10 @@
                     margin-top: 15px;
                     font-size: 8pt;
                     color: #777;
+                }
+                .print-version td div:last-child {
+                    font-size: 7pt;
+                    margin-top: 3px;
                 }
                 @page {
                     size: A4 landscape;
@@ -494,31 +503,42 @@ function generatePrintRows(data = allSellerData) {
         return `
             <tr>
                 <td>${seller.vendedor || 'N/I'}</td>
+                
+                <!-- Venda MED ETICO -->
                 <td>${formatCurrency(seller.vendaMedEtico)}</td>
+                
+                <!-- % VENDAS MED ETICO -->
                 <td>
                     <div>${formatPercentage(percentVendasMedEtico)}</div>
                     <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
                 </td>
+                
+                <!-- % DESCONTO ETICO -->
                 <td>
                     <div>${formatPercentage(seller.descontoEticoPercent)}</div>
                     <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
                 </td>
+                
+                <!-- Venda GENÉRICOS E SIMILARES -->
                 <td>${formatCurrency(vendaGenericosSimilares)}</td>
+                
+                <!-- % VENDAS GENÉRICOS E SIMILARES -->
                 <td>
                     <div>${formatPercentage(percentVendasGenericosSimilares)}</div>
                     <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
                 </td>
+                
+                <!-- % DESCONTO GENÉRICOS E SIMILARES -->
                 <td>
                     <div>${formatPercentage(seller.mediaDescontoGenericosSimilares)}</div>
                     <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
                 </td>
+                
+                <!-- PONTOS -->
                 <td>${formatCurrency(seller.totalVenda)}</td>
+                
+                <!-- Meta PONTOS -->
                 <td>${formatCurrency(seller.metaPontos)}</td>
-                <td class="${statusVendasEtico.className} hidden">${statusVendasEtico.message}</td>
-                <td class="${statusDescontoEtico.className} hidden">${statusDescontoEtico.message}</td>
-                <td class="${statusVendasGenericos.className} hidden">${statusVendasGenericos.message}</td>
-                <td class="${statusDescontoGenericos.className} hidden">${statusDescontoGenericos.message}</td>
-                <td class="${statusPontos.className} hidden">${statusPontos.message}</td>
             </tr>
         `;
     }).join('');
