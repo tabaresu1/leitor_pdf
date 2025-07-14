@@ -421,71 +421,49 @@ function exportToCSV() {
 }
 
 // =============================================
-// FUNÇÃO PARA GERAR SUGESTÕES COMBINADAS (ATUALIZADA)
+// FUNÇÕES PARA GERAÇÃO DE RELATÓRIOS
 // =============================================
-function generateCombinedSuggestions(sellers) {
-    const recommendations = {
-        genericos: {
-            title: "Para Melhorar Vendas de Genéricos/Similares",
-            items: new Set()
-        },
-        desconto_genericos: {
-            title: "Para Reduzir Descontos em Genéricos/Similares",
-            items: new Set()
-        },
-        eticos: {
-            title: "Para Reduzir Descontos em Medicamentos Étivos",
-            items: new Set()
-        }
-    };
+function generateSuggestions(seller) {
+    const genericosSimilares = calculateGenericosSimilares(seller);
+    const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto;
+    
+    const percentVendasGenericosSimilares = seller.totalVenda > 0 
+        ? genericosSimilares.vendaLiquida / seller.totalVenda 
+        : 0;
 
-    sellers.forEach(seller => {
-        const genericosSimilares = calculateGenericosSimilares(seller);
-        const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto;
-        const percentVendasGenericosSimilares = seller.totalVenda > 0 
-            ? genericosSimilares.vendaLiquida / seller.totalVenda 
-            : 0;
+    const sugestoes = [];
 
-        // Baixa venda de genéricos/similares
-        if (percentVendasGenericosSimilares < 0.70) {
-            recommendations.genericos.items.add(
-                "👉 Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
-            );
-        }
-
-        // Desconto alto em genéricos/similares
-        if (percentDescontoGenericosSimilares > 0.40) {
-            recommendations.desconto_genericos.items.add(
-                "👉 Para remédios genéricos, comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
-            );
-        }
-
-        // Desconto alto em éticos
-        if ((seller.descontoEticoPercent || 0) > 0.08) {
-            recommendations.eticos.items.add(
-                "👉 Para remédios éticos, inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
-            );
-        }
-    });
-
-    // Filtrar categorias vazias
-    const activeRecommendations = Object.values(recommendations)
-        .filter(cat => cat.items.size > 0);
-
-    // Se não houver sugestões
-    if (activeRecommendations.length === 0) {
-        return `<p class="p-4 bg-green-50 rounded-lg">Continue com o bom trabalho, mantendo os indicadores dentro do ideal.</p>`;
+    if (percentVendasGenericosSimilares < 0.70) {
+        sugestoes.push(
+            "👉 Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
+        );
     }
 
-    // Gerar HTML das recomendações
-    return activeRecommendations.map(cat => `
-        <div class="mb-6">
-            <h3 class="font-bold text-lg mb-2">${cat.title}</h3>
-            <ul class="list-disc pl-5 space-y-2">
-                ${Array.from(cat.items).map(item => `<li>${item}</li>`).join('')}
+    if (percentDescontoGenericosSimilares > 0.40) {
+        sugestoes.push(
+            "👉 Para Medicamentos Genéricos, comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+        );
+    }
+
+    if ((seller.descontoEticoPercent || 0) > 0.08) {
+        sugestoes.push(
+            "👉 Para Medicamentos Éticos, inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. " +
+            "Com desconto elevado, essas vendas ficam no vermelho com os impostos."
+        );
+    }
+
+    if (sugestoes.length === 0) {
+        sugestoes.push("Continue com o bom trabalho, mantendo os indicadores dentro do ideal.");
+    }
+
+    return `
+        <div style="margin-top: 15px; font-size: 9pt; color: #333;">
+            <strong>Sugestões e Motivações:</strong>
+            <ul style="margin-top: 5px; padding-left: 18px;">
+                ${sugestoes.map(s => `<li style="margin-bottom: 6px;">${s}</li>`).join('')}
             </ul>
         </div>
-    `).join('');
+    `;
 }
 
 function generatePrintRows(data = allSellerData) {
@@ -632,16 +610,6 @@ function generatePrintVersion() {
                     </tbody>
                 </table>
                 
-                <!-- Seção de Recomendações -->
-                <div id="recomendacoesContainer" class="mt-8 bg-white p-6 rounded-xl shadow-lg hidden">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Recomendações Estratégicas</h2>
-                    <div id="dynamicRecommendations">
-                        <!-- As recomendações serão geradas dinamicamente aqui -->
-                    </div>
-                </div>
-
-</div>
-                
                 <!-- CORREÇÃO: Mostrar sugestões apenas uma vez, no final -->
                 <div class="suggestions-container">
                     <h3>Sugestões e Motivações</h3>
@@ -769,9 +737,6 @@ document.getElementById('processPdfButton').addEventListener('click', async () =
             populateSellerFilter(allSellerData);
             dashboardContainer.classList.remove('hidden');
             exportContainer.classList.remove('hidden');
-            const recommendationsHtml = generateCombinedSuggestions(allSellerData);
-            document.getElementById('dynamicRecommendations').innerHTML = recommendationsHtml;
-            document.getElementById('recomendacoesContainer').classList.remove('hidden');
             
             // Configura o botão de impressão após carregar os dados
             printBtn.onclick = generatePrintVersion;
