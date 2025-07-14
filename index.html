@@ -182,10 +182,7 @@
         let allSellerData = [];
 
         function formatCurrency(value) {
-            return new Intl.NumberFormat('pt-BR', { 
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(value || 0);
+            return Math.round(value || 0).toLocaleString('pt-BR');
         }
 
         function formatPercentage(value) {
@@ -197,36 +194,82 @@
         }
 
         function getStatus(value, ideal, type) {
-            let className = '';
-            let message = '';
+    let className = '';
+    let message = '';
 
-            if (type === 'percentVendasMedEtico' || type === 'percentDescontoEtico' || type === 'percentDescontoGenericosSimilares') {
-                if (value <= ideal) {
-                    className = 'status-ideal';
-                    message = 'Dentro do Ideal';
-                } else {
-                    className = 'status-above-ideal';
-                    message = 'Acima do Ideal';
-                }
-            } else if (type === 'percentVendasGenericosSimilares') {
-                if (value >= ideal) {
-                    className = 'status-ideal';
-                    message = 'Dentro do Ideal';
-                } else {
-                    className = 'status-below-ideal';
-                    message = 'Abaixo do Ideal';
-                }
-            } else if (type === 'pontos') {
-                if (value >= ideal) {
-                    className = 'status-ideal';
-                    message = 'Meta Atingida';
-                } else {
-                    className = 'status-below-ideal';
-                    message = 'Abaixo da Meta';
-                }
+    switch (type) {
+        case 'percentVendasMedEtico':
+            if (value <= 0.25) {
+                className = 'status-ideal';
+                message = 'Dentro do ideal';
+            } else if (value <= 0.30) {
+                className = 'status-below-ideal';
+                message = 'Está quase lá! Só falta ajustar um pouco.';
+            } else {
+                className = 'status-above-ideal';
+                message = 'EXTREMAMENTE acima do ideal';
             }
-            return { className, message };
-        }
+            break;
+
+        case 'percentDescontoEtico':
+            if (value <= 0.05) {
+                className = 'status-ideal';
+                message = 'Dentro do ideal';
+            } else if (value <= 0.08) {
+                className = 'status-below-ideal';
+                message = 'Um pouco acima do ideal';
+            } else {
+                className = 'status-above-ideal';
+                message = 'Desconto EXTREMAMENTE acima do ideal';
+            }
+            break;
+
+        case 'percentVendasGenericosSimilares':
+            if (value > 0.75) {
+                className = 'status-ideal';
+                message = 'Dentro do ideal';
+            } else if (value >= 0.70) {
+                className = 'status-below-ideal';
+                message = 'Falta pouco para atingir o ideal';
+            } else {
+                className = 'status-above-ideal';
+                message = 'EXTREMAMENTE abaixo do ideal';
+            }
+            break;
+
+        case 'percentDescontoGenericosSimilares':
+            if (value <= 0.25) {
+                className = 'status-ideal';
+                message = 'Dentro do ideal';
+            } else if (value <= 0.30) {
+                className = 'status-below-ideal';
+                message = 'Um pouco acima do ideal';
+            } else if (value <= 0.40) {
+                className = 'status-above-ideal';
+                message = 'Muito acima do ideal';
+            } else {
+                className = 'status-above-ideal';
+                message = 'Desconto EXTREMAMENTE acima do ideal';
+            }
+            break;
+
+        case 'pontos':
+            if (value > 2000) {
+                className = 'status-ideal';
+                message = 'Vendas dentro do ideal';
+            } else if (value >= 1500) {
+                className = 'status-below-ideal';
+                message = 'Vendas um pouco baixas';
+            } else {
+                className = 'status-above-ideal';
+                message = 'Vendas muito baixas';
+            }
+            break;
+    }
+
+    return { className, message };
+}
+
 
         function addSellerRow(sellerData) {
     const tbody = document.getElementById('spreadsheet-body');
@@ -368,7 +411,47 @@
             link.click();
         }
 
-        function generatePrintVersion() {
+        function generateSuggestions(seller) {
+    const sugestoes = [];
+
+    if ((seller.descontoEticoPercent || 0) > 0.08) {
+        sugestoes.push(
+            "Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. " +
+            "Com desconto elevado, essas vendas ficam no vermelho com os impostos."
+        );
+    }
+
+    const percentVendasGenericosSimilares = seller.totalVenda > 0 
+        ? ((seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0)) / seller.totalVenda 
+        : 0;
+    
+    if (percentVendasGenericosSimilares < 0.70) {
+        sugestoes.push(
+            "Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
+        );
+    }
+
+    if ((seller.mediaDescontoGenericosSimilares || 0) > 0.40) {
+        sugestoes.push(
+            "Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+        );
+    }
+
+    if (sugestoes.length === 0) {
+        sugestoes.push("Continue com o bom trabalho, mantendo os indicadores dentro do ideal.");
+    }
+
+    return `
+        <div style="margin-top: 15px; font-size: 9pt; color: #333;">
+            <strong>Sugestões e Motivações:</strong>
+            <ul style="margin-top: 5px; padding-left: 18px;">
+                ${sugestoes.map(s => `<li style="margin-bottom: 6px;">${s}</li>`).join('')}
+            </ul>
+        </div>
+    `;
+}
+
+function generatePrintVersion() {
     const selectedVendedor = document.getElementById('sellerFilter').value;
     const printData = selectedVendedor === 'all' 
         ? allSellerData 
@@ -464,6 +547,8 @@
                         ${generatePrintRows(printData)}
                     </tbody>
                 </table>
+
+                ${printData.map(seller => generateSuggestions(seller)).join('')}
             </div>
             
             <div class="print-footer">
@@ -484,6 +569,7 @@
     printWindow.document.close();
 }
 
+
 function generatePrintRows(data = allSellerData) {
     return data.map(seller => {
         const vendaGenericosSimilares = (seller.vendaMedGene || 0) + (seller.vendaMedSimil || 0);
@@ -491,56 +577,45 @@ function generatePrintRows(data = allSellerData) {
             seller.vendaMedEtico / seller.totalVenda : 0;
         const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
             vendaGenericosSimilares / seller.totalVenda : 0;
-        
-        const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
-        const statusDescontoEtico = getStatus(seller.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
-        const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
-        const statusDescontoGenericos = getStatus(seller.mediaDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
-        const statusPontos = getStatus(seller.totalVenda, seller.metaPontos, 'pontos');
-        
+        const percentDescontoGenericosSimilares = seller.mediaDescontoGenericosSimilares || 0;
+
+        const statusVendasEtico = getStatus(percentVendasMedEtico, null, 'percentVendasMedEtico');
+        const statusDescontoEtico = getStatus(seller.descontoEticoPercent, null, 'percentDescontoEtico');
+        const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, null, 'percentVendasGenericosSimilares');
+        const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, null, 'percentDescontoGenericosSimilares');
+        const statusPontos = getStatus(seller.totalVenda, null, 'pontos');
+
         return `
             <tr>
                 <td>${seller.vendedor || 'N/I'}</td>
-                
-                <!-- Venda MED ETICO -->
-                <td>${formatCurrency(seller.vendaMedEtico)}</td>
-                
-                <!-- % VENDAS MED ETICO -->
+                <td>${Math.round(seller.vendaMedEtico)}</td>
                 <td>
-                    <div>${formatPercentage(percentVendasMedEtico)}</div>
+                    ${formatPercentage(percentVendasMedEtico)}
                     <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
                 </td>
-                
-                <!-- % DESCONTO ETICO -->
                 <td>
-                    <div>${formatPercentage(seller.descontoEticoPercent)}</div>
+                    ${formatPercentage(seller.descontoEticoPercent)}
                     <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
                 </td>
-                
-                <!-- Venda GENÉRICOS E SIMILARES -->
-                <td>${formatCurrency(vendaGenericosSimilares)}</td>
-                
-                <!-- % VENDAS GENÉRICOS E SIMILARES -->
+                <td>${Math.round(vendaGenericosSimilares)}</td>
                 <td>
-                    <div>${formatPercentage(percentVendasGenericosSimilares)}</div>
+                    ${formatPercentage(percentVendasGenericosSimilares)}
                     <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
                 </td>
-                
-                <!-- % DESCONTO GENÉRICOS E SIMILARES -->
                 <td>
-                    <div>${formatPercentage(seller.mediaDescontoGenericosSimilares)}</div>
+                    ${formatPercentage(percentDescontoGenericosSimilares)}
                     <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
                 </td>
-                
-                <!-- PONTOS -->
-                <td>${formatCurrency(seller.totalVenda)}</td>
-                
-                <!-- Meta PONTOS -->
-                <td>${formatCurrency(seller.metaPontos)}</td>
+                <td>${Math.round(seller.totalVenda)}</td>
+                <td>
+                    ${Math.round(seller.metaPontos)}
+                    <div class="${statusPontos.className}">${statusPontos.message}</div>
+                </td>
             </tr>
         `;
     }).join('');
 }
+
 
 document.getElementById('processPdfButton').addEventListener('click', async () => {
     const fileInput = document.getElementById('pdfUpload');
