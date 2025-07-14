@@ -654,13 +654,13 @@ function generateCombinedSuggestions(sellers) {
 
         if (percentDescontoGenericosSimilares > 0.40) {
             uniqueSuggestions.add(
-                "👉 Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+                "👉 Para Medicamentos Genéricos, comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
             );
         }
 
         if ((seller.descontoEticoPercent || 0) > 0.08) {
             uniqueSuggestions.add(
-                "👉 Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. " +
+                "👉 Para Medicamentos Éticos, inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. " +
                 "Com desconto elevado, essas vendas ficam no vermelho com os impostos."
             );
         }
