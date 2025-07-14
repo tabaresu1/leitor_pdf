@@ -152,11 +152,6 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-percent">% DESCONTO GENÉRICOS E SIMILARES</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-valores">PONTOS (R$)</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-valores">Meta PONTOS (R$)</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % VENDAS MED ETICO</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % DESCONTO ETICO</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % VENDAS GENÉRICOS E SIMILARES</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-status">Status % DESCONTO GENÉRICOS E SIMILARES</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg col-status">Status PONTOS</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200" id="spreadsheet-body">
@@ -290,13 +285,6 @@
         <td class="px-6 py-4 text-sm text-gray-500 col-valores">
             <div>${formatCurrency(sellerData.metaPontos)}</div>
         </td>
-        
-        <!-- Colunas de status (mantidas como estavam para manter a estrutura da tabela) -->
-        <td class="px-6 py-4 text-sm ${statusVendasEtico.className} col-status hidden">${statusVendasEtico.message}</td>
-        <td class="px-6 py-4 text-sm ${statusDescontoEtico.className} col-status hidden">${statusDescontoEtico.message}</td>
-        <td class="px-6 py-4 text-sm ${statusVendasGenericos.className} col-status hidden">${statusVendasGenericos.message}</td>
-        <td class="px-6 py-4 text-sm ${statusDescontoGenericos.className} col-status hidden">${statusDescontoGenericos.message}</td>
-        <td class="px-6 py-4 text-sm ${statusPontos.className} col-status hidden">${statusPontos.message}</td>
     `;
     tbody.appendChild(row);
 }
@@ -463,11 +451,6 @@
                             <th>% Desc GEN</th>
                             <th>Pontos (R$)</th>
                             <th>Meta (R$)</th>
-                            <th>Status % MED</th>
-                            <th>Status Desc MED</th>
-                            <th>Status % GEN</th>
-                            <th>Status Desc GEN</th>
-                            <th>Status Pontos</th>
                         </tr>
                     </thead>
                     <tbody>
