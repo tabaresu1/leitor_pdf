@@ -35,7 +35,7 @@ pip install flask flask-cors camelot-py pandas
 1. Inicie o servidor backend:
 
 ```bash
-python api.py
+python app.py
 ```
 
 > Servidor disponível em: `http://localhost:5000`
@@ -85,25 +85,16 @@ Métricas por categoria:
 ## 📦 Estrutura do Projeto
 
 ```text
-pharmavision/
-├── backend/
-│   ├── api.py               # Servidor Flask principal
-│   ├── pdf_processor.py     # Lógica de análise de PDFs
-│   └── requirements.txt     # Dependências Python
-├── frontend/
-│   ├── index.html           # Interface principal
-│   ├── assets/
-│   │   ├── css/             # Estilos complementares
-│   │   └── js/              # Lógica frontend
-│   └── config.js            # Configurações de API
-└── samples/                 # PDFs de exemplo para testes
+leitor_pdf/
+├── app.py                   # Toda a parte do backend
+└── index.html               # Frontend do projeto
 ```
 
 ---
 
 ## 🛠 Customização
 
-Ajuste os parâmetros de análise em `api.py`:
+Ajuste os parâmetros de análise em `app.py`:
 
 ```python
 # Limites para recomendações
