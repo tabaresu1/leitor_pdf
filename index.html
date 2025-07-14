@@ -423,46 +423,63 @@ function exportToCSV() {
 // =============================================
 // FUNÇÕES PARA GERAÇÃO DE RELATÓRIOS
 // =============================================
-function generateSuggestions(seller) {
-    const genericosSimilares = calculateGenericosSimilares(seller);
-    const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto;
-    
-    const percentVendasGenericosSimilares = seller.totalVenda > 0 
-        ? genericosSimilares.vendaLiquida / seller.totalVenda 
-        : 0;
+function generateCombinedSuggestions(sellers) {
+    const suggestionsMap = {
+        'genericos': [],
+        'desconto_genericos': [],
+        'eticos': []
+    };
 
-    const sugestoes = [];
+    sellers.forEach(seller => {
+        const genericosSimilares = calculateGenericosSimilares(seller);
+        const percentDescontoGenericosSimilares = genericosSimilares.percentDesconto;
+        const percentVendasGenericosSimilares = seller.totalVenda > 0 
+            ? genericosSimilares.vendaLiquida / seller.totalVenda 
+            : 0;
 
-    if (percentVendasGenericosSimilares < 0.70) {
-        sugestoes.push(
-            "👉 Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
-        );
-    }
+        // Baixa venda de genéricos/similares
+        if (percentVendasGenericosSimilares < 0.70) {
+            suggestionsMap.genericos.push(
+                "Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
+            );
+        }
 
-    if (percentDescontoGenericosSimilares > 0.40) {
-        sugestoes.push(
-            "👉 Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
-        );
-    }
+        // Desconto alto em genéricos/similares
+        if (percentDescontoGenericosSimilares > 0.40) {
+            suggestionsMap.desconto_genericos.push(
+                "Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+            );
+        }
 
-    if ((seller.descontoEticoPercent || 0) > 0.08) {
-        sugestoes.push(
-            "👉 Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. " +
-            "Com desconto elevado, essas vendas ficam no vermelho com os impostos."
-        );
-    }
+        // Desconto alto em éticos
+        if ((seller.descontoEticoPercent || 0) > 0.08) {
+            suggestionsMap.eticos.push(
+                "Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
+            );
+        }
+    });
 
-    if (sugestoes.length === 0) {
-        sugestoes.push("Continue com o bom trabalho, mantendo os indicadores dentro do ideal.");
+    // Se não houver sugestões específicas
+    if (Object.values(suggestionsMap).every(arr => arr.length === 0)) {
+        return `<p>Continue com o bom trabalho, mantendo os indicadores dentro do ideal.</p>`;
     }
 
     return `
-        <div style="margin-top: 15px; font-size: 9pt; color: #333;">
-            <strong>Sugestões e Motivações:</strong>
-            <ul style="margin-top: 5px; padding-left: 18px;">
-                ${sugestoes.map(s => `<li style="margin-bottom: 6px;">${s}</li>`).join('')}
-            </ul>
-        </div>
+        <div class="suggestion-category">
+            ${suggestionsMap.genericos.length > 0 ? `
+                <h4>Para Melhorar Vendas de Genéricos/Similares</h4>
+                <ul>${suggestionsMap.genericos.map(s => `<li>👉 ${s}</li>`).join('')}</ul>
+            ` : ''}
+            
+            ${suggestionsMap.desconto_genericos.length > 0 ? `
+                <h4>Para Reduzir Descontos em Genéricos/Similares</h4>
+                <ul>${suggestionsMap.desconto_genericos.map(s => `<li>👉 ${s}</li>`).join('')}</ul>
+            ` : ''}
+            
+            ${suggestionsMap.eticos.length > 0 ? `
+                <h4>Para Reduzir Descontos em Medicamentos Étivos</h4>
+                <ul>${suggestionsMap.eticos.map(s => `<li>👉 ${s}</li>`).join('')}</ul>
+            ` : ''}
     `;
 }
 
