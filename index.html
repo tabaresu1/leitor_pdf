@@ -227,41 +227,79 @@
         }
 
         function addSellerRow(sellerData) {
-            const tbody = document.getElementById('spreadsheet-body');
-            const vendaGenericosSimilares = (sellerData.vendaMedGene || 0) + (sellerData.vendaMedSimil || 0);
-            const percentVendasMedEtico = sellerData.totalVenda > 0 ? 
-                sellerData.vendaMedEtico / sellerData.totalVenda : 0;
-            const percentVendasGenericosSimilares = sellerData.totalVenda > 0 ? 
-                vendaGenericosSimilares / sellerData.totalVenda : 0;
-            const percentDescontoGenericosSimilares = sellerData.mediaDescontoGenericosSimilares || 0;
+    const tbody = document.getElementById('spreadsheet-body');
+    const vendaGenericosSimilares = (sellerData.vendaMedGene || 0) + (sellerData.vendaMedSimil || 0);
+    const percentVendasMedEtico = sellerData.totalVenda > 0 ? 
+        sellerData.vendaMedEtico / sellerData.totalVenda : 0;
+    const percentVendasGenericosSimilares = sellerData.totalVenda > 0 ? 
+        vendaGenericosSimilares / sellerData.totalVenda : 0;
+    const percentDescontoGenericosSimilares = sellerData.mediaDescontoGenericosSimilares || 0;
 
-            const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
-            const statusDescontoEtico = getStatus(sellerData.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
-            const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
-            const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
-            const statusPontos = getStatus(sellerData.totalVenda, sellerData.metaPontos, 'pontos');
+    const statusVendasEtico = getStatus(percentVendasMedEtico, idealValues.maxVendasMedEtico, 'percentVendasMedEtico');
+    const statusDescontoEtico = getStatus(sellerData.descontoEticoPercent, idealValues.maxDescontoEtico, 'percentDescontoEtico');
+    const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, idealValues.minVendasGenericosSimilares, 'percentVendasGenericosSimilares');
+    const statusDescontoGenericos = getStatus(percentDescontoGenericosSimilares, idealValues.maxDescontoGenericosSimilares, 'percentDescontoGenericosSimilares');
+    const statusPontos = getStatus(sellerData.totalVenda, sellerData.metaPontos, 'pontos');
 
-            const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50';
-            row.dataset.vendedor = sellerData.vendedor || '';
-            row.innerHTML = `
-                <td class="px-6 py-4 text-sm font-medium text-gray-900 col-vendedor">${sellerData.vendedor || 'N/I'}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(sellerData.vendaMedEtico)}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(percentVendasMedEtico)}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(sellerData.descontoEticoPercent)}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(vendaGenericosSimilares)}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(percentVendasGenericosSimilares)}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-percent">${formatPercentage(percentDescontoGenericosSimilares)}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(sellerData.totalVenda)}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 col-valores">${formatCurrency(sellerData.metaPontos)}</td>
-                <td class="px-6 py-4 text-sm ${statusVendasEtico.className} col-status">${statusVendasEtico.message}</td>
-                <td class="px-6 py-4 text-sm ${statusDescontoEtico.className} col-status">${statusDescontoEtico.message}</td>
-                <td class="px-6 py-4 text-sm ${statusVendasGenericos.className} col-status">${statusVendasGenericos.message}</td>
-                <td class="px-6 py-4 text-sm ${statusDescontoGenericos.className} col-status">${statusDescontoGenericos.message}</td>
-                <td class="px-6 py-4 text-sm ${statusPontos.className} col-status">${statusPontos.message}</td>
-            `;
-            tbody.appendChild(row);
-        }
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+    row.dataset.vendedor = sellerData.vendedor || '';
+    row.innerHTML = `
+        <td class="px-6 py-4 text-sm font-medium text-gray-900 col-vendedor">${sellerData.vendedor || 'N/I'}</td>
+        
+        <!-- Coluna Venda MED ETICO -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+            <div>${formatCurrency(sellerData.vendaMedEtico)}</div>
+        </td>
+        
+        <!-- Coluna % VENDAS MED ETICO -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+            <div>${formatPercentage(percentVendasMedEtico)}</div>
+            <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
+        </td>
+        
+        <!-- Coluna % DESCONTO ETICO -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+            <div>${formatPercentage(sellerData.descontoEticoPercent)}</div>
+            <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
+        </td>
+        
+        <!-- Coluna Venda GENÉRICOS E SIMILARES -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+            <div>${formatCurrency(vendaGenericosSimilares)}</div>
+        </td>
+        
+        <!-- Coluna % VENDAS GENÉRICOS E SIMILARES -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+            <div>${formatPercentage(percentVendasGenericosSimilares)}</div>
+            <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
+        </td>
+        
+        <!-- Coluna % DESCONTO GENÉRICOS E SIMILARES -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-percent">
+            <div>${formatPercentage(percentDescontoGenericosSimilares)}</div>
+            <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
+        </td>
+        
+        <!-- Coluna PONTOS -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+            <div>${formatCurrency(sellerData.totalVenda)}</div>
+        </td>
+        
+        <!-- Coluna Meta PONTOS -->
+        <td class="px-6 py-4 text-sm text-gray-500 col-valores">
+            <div>${formatCurrency(sellerData.metaPontos)}</div>
+        </td>
+        
+        <!-- Colunas de status (mantidas como estavam para manter a estrutura da tabela) -->
+        <td class="px-6 py-4 text-sm ${statusVendasEtico.className} col-status hidden">${statusVendasEtico.message}</td>
+        <td class="px-6 py-4 text-sm ${statusDescontoEtico.className} col-status hidden">${statusDescontoEtico.message}</td>
+        <td class="px-6 py-4 text-sm ${statusVendasGenericos.className} col-status hidden">${statusVendasGenericos.message}</td>
+        <td class="px-6 py-4 text-sm ${statusDescontoGenericos.className} col-status hidden">${statusDescontoGenericos.message}</td>
+        <td class="px-6 py-4 text-sm ${statusPontos.className} col-status hidden">${statusPontos.message}</td>
+    `;
+    tbody.appendChild(row);
+}
 
         function populateSellerFilter(sellers) {
             const sellerFilter = document.getElementById('sellerFilter');
@@ -357,6 +395,9 @@
                     font-family: Arial, sans-serif;
                     margin: 0;
                     padding: 10px;
+                }
+                td div {
+                    margin: 2px 0;
                 }
                 .print-header {
                     text-align: center;
@@ -471,18 +512,30 @@ function generatePrintRows(data = allSellerData) {
             <tr>
                 <td>${seller.vendedor || 'N/I'}</td>
                 <td>${formatCurrency(seller.vendaMedEtico)}</td>
-                <td>${formatPercentage(percentVendasMedEtico)}</td>
-                <td>${formatPercentage(seller.descontoEticoPercent)}</td>
+                <td>
+                    <div>${formatPercentage(percentVendasMedEtico)}</div>
+                    <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
+                </td>
+                <td>
+                    <div>${formatPercentage(seller.descontoEticoPercent)}</div>
+                    <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
+                </td>
                 <td>${formatCurrency(vendaGenericosSimilares)}</td>
-                <td>${formatPercentage(percentVendasGenericosSimilares)}</td>
-                <td>${formatPercentage(seller.mediaDescontoGenericosSimilares)}</td>
+                <td>
+                    <div>${formatPercentage(percentVendasGenericosSimilares)}</div>
+                    <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
+                </td>
+                <td>
+                    <div>${formatPercentage(seller.mediaDescontoGenericosSimilares)}</div>
+                    <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
+                </td>
                 <td>${formatCurrency(seller.totalVenda)}</td>
                 <td>${formatCurrency(seller.metaPontos)}</td>
-                <td class="${statusVendasEtico.className}">${statusVendasEtico.message}</td>
-                <td class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</td>
-                <td class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</td>
-                <td class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</td>
-                <td class="${statusPontos.className}">${statusPontos.message}</td>
+                <td class="${statusVendasEtico.className} hidden">${statusVendasEtico.message}</td>
+                <td class="${statusDescontoEtico.className} hidden">${statusDescontoEtico.message}</td>
+                <td class="${statusVendasGenericos.className} hidden">${statusVendasGenericos.message}</td>
+                <td class="${statusDescontoGenericos.className} hidden">${statusDescontoGenericos.message}</td>
+                <td class="${statusPontos.className} hidden">${statusPontos.message}</td>
             </tr>
         `;
     }).join('');
