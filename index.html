@@ -424,10 +424,19 @@ function exportToCSV() {
 // FUNÇÕES PARA GERAÇÃO DE RELATÓRIOS
 // =============================================
 function generateCombinedSuggestions(sellers) {
-    const suggestionsMap = {
-        'genericos': [],
-        'desconto_genericos': [],
-        'eticos': []
+    const recommendations = {
+        genericos: {
+            title: "Para Melhorar Vendas de Genéricos/Similares",
+            items: new Set()
+        },
+        desconto_genericos: {
+            title: "Para Reduzir Descontos em Genéricos/Similares",
+            items: new Set()
+        },
+        eticos: {
+            title: "Para Reduzir Descontos em Medicamentos Étivos",
+            items: new Set()
+        }
     };
 
     sellers.forEach(seller => {
@@ -439,48 +448,44 @@ function generateCombinedSuggestions(sellers) {
 
         // Baixa venda de genéricos/similares
         if (percentVendasGenericosSimilares < 0.70) {
-            suggestionsMap.genericos.push(
-                "Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
+            recommendations.genericos.items.add(
+                "👉 Ofereça mais genéricos e similares! Coloque em cima do balcão e apresente com entusiasmo."
             );
         }
 
         // Desconto alto em genéricos/similares
         if (percentDescontoGenericosSimilares > 0.40) {
-            suggestionsMap.desconto_genericos.push(
-                "Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
+            recommendations.desconto_genericos.items.add(
+                "👉 Comece o preço sem desconto. O primeiro desconto é de 20% e tente aplicar no máximo até 30%."
             );
         }
 
         // Desconto alto em éticos
         if ((seller.descontoEticoPercent || 0) > 0.08) {
-            suggestionsMap.eticos.push(
-                "Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
+            recommendations.eticos.items.add(
+                "👉 Inicie a venda sempre sem desconto. Depois, ofereça 5% e suba gradativamente. Com desconto elevado, essas vendas ficam no vermelho com os impostos."
             );
         }
     });
 
-    // Se não houver sugestões específicas
-    if (Object.values(suggestionsMap).every(arr => arr.length === 0)) {
-        return `<p>Continue com o bom trabalho, mantendo os indicadores dentro do ideal.</p>`;
+    // Filtrar categorias vazias
+    const activeRecommendations = Object.values(recommendations)
+        .filter(cat => cat.items.size > 0);
+
+    // Se não houver sugestões
+    if (activeRecommendations.length === 0) {
+        return `<p class="p-4 bg-green-50 rounded-lg">Continue com o bom trabalho, mantendo os indicadores dentro do ideal.</p>`;
     }
 
-    return `
-        <div class="suggestion-category">
-            ${suggestionsMap.genericos.length > 0 ? `
-                <h4>Para Melhorar Vendas de Genéricos/Similares</h4>
-                <ul>${suggestionsMap.genericos.map(s => `<li>👉 ${s}</li>`).join('')}</ul>
-            ` : ''}
-            
-            ${suggestionsMap.desconto_genericos.length > 0 ? `
-                <h4>Para Reduzir Descontos em Genéricos/Similares</h4>
-                <ul>${suggestionsMap.desconto_genericos.map(s => `<li>👉 ${s}</li>`).join('')}</ul>
-            ` : ''}
-            
-            ${suggestionsMap.eticos.length > 0 ? `
-                <h4>Para Reduzir Descontos em Medicamentos Étivos</h4>
-                <ul>${suggestionsMap.eticos.map(s => `<li>👉 ${s}</li>`).join('')}</ul>
-            ` : ''}
-    `;
+    // Gerar HTML das recomendações
+    return activeRecommendations.map(cat => `
+        <div class="mb-6">
+            <h3 class="font-bold text-lg mb-2">${cat.title}</h3>
+            <ul class="list-disc pl-5 space-y-2">
+                ${Array.from(cat.items).map(item => `<li>${item}</li>`).join('')}
+            </ul>
+        </div>
+    `).join('');
 }
 
 function generatePrintRows(data = allSellerData) {
