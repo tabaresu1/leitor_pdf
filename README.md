@@ -1,7 +1,9 @@
 
-# 💊 PharmaVision - Dashboard de Desempenho Farmacêutico
+# 💊 Dashboard de Desempenho Farmacêutico
 
 ## 🌟 Visão Geral
+
+![Tela inicial](assets/tela-inicial.jpg)
 
 **PharmaVision** é um sistema completo para análise estratégica de vendas em farmácias, capaz de:
 
