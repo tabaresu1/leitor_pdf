@@ -3,6 +3,7 @@
 
 ## 🌟 Visão Geral
 
+**Tela Inicial**
 ![Tela inicial](assets/tela-inicial.jpg)
 
 **PharmaVision** é um sistema completo para análise estratégica de vendas em farmácias, capaz de:
@@ -118,6 +119,13 @@ THRESHOLDS = {
 - Alertas de desempenho  
 
 3. Exporte os dados para **CSV** ou **PDF**
+## 📊 EXEMPLOS
+
+**Relatório Geral**
+![Relatório Geral](assets/relatorio-geral.jpg)
+
+**Relatório Individual**
+![Relatório Individual](assets/relatorio-individual.jpg)
 
 ---
 
