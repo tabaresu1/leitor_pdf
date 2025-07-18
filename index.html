@@ -34,6 +34,39 @@
             font-weight: 600;
             color: #374151;
         }
+        /* Modal de impressão */
+        .print-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .print-modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .print-option {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .print-option:hover {
+            background-color: #f9fafb;
+        }
         .col-vendedor { min-width: 180px; }
         .col-valores { min-width: 140px; }
         .col-percent { min-width: 120px; }
@@ -124,6 +157,36 @@
             <select id="sellerFilter" class="block w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 <option value="all">Todos</option>
             </select>
+        </div>
+                <!-- Botão de impressão (adicione junto com os outros controles) -->
+        <div class="flex flex-col items-center mb-6 hidden" id="printContainer">
+            <button id="printButton" class="mt-4 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                Imprimir Relatórios
+            </button>
+        </div>
+
+        <!-- Modal de impressão -->
+        <div id="printModal" class="print-modal">
+            <div class="print-modal-content">
+                <h3 class="text-lg font-bold mb-4">Opções de Impressão</h3>
+                
+                <div class="print-option" onclick="printAllReports()">
+                    <h4 class="font-semibold">📄 Relatório Geral</h4>
+                    <p class="text-sm text-gray-600">Imprime todos vendedores em uma única página</p>
+                </div>
+                
+                <div class="print-option" onclick="openIndividualPrintSelection()">
+                    <h4 class="font-semibold">📑 Relatórios Individuais</h4>
+                    <p class="text-sm text-gray-600">Selecione quais vendedores imprimir</p>
+                </div>
+                
+                <div id="individualPrintSelection" style="display: none;">
+                    <h4 class="font-semibold mt-4 mb-2">Selecione os Vendedores:</h4>
+                    <div id="sellerCheckboxes" class="mb-4"></div>
+                    <button onclick="printSelectedSellers()" class="px-4 py-2 bg-blue-600 text-white rounded">Imprimir Selecionados</button>
+                    <button onclick="closePrintModal()" class="px-4 py-2 ml-2 bg-gray-300 rounded">Cancelar</button>
+                </div>
+            </div>
         </div>
 
         <div id="exportContainer" class="flex justify-center gap-4 mb-4 hidden no-print">
@@ -762,6 +825,80 @@ const idealValues = {
 };
 
 let allSellerData = [];
+
+// Mostrar container de impressão quando dados estiverem carregados
+function togglePrintContainer(show) {
+    document.getElementById('printContainer').classList.toggle('hidden', !show);
+}
+
+// Modal de impressão
+function openPrintModal() {
+    document.getElementById('printModal').style.display = 'flex';
+}
+
+function closePrintModal() {
+    document.getElementById('printModal').style.display = 'none';
+    document.getElementById('individualPrintSelection').style.display = 'none';
+}
+
+// Imprimir todos (relatório geral)
+function printAllReports() {
+    window.print(); // Isso imprimirá a página atual (com todos vendedores)
+    closePrintModal();
+}
+
+// Seleção individual
+function openIndividualPrintSelection() {
+    const container = document.getElementById('sellerCheckboxes');
+    container.innerHTML = '';
+    
+    const uniqueSellers = [...new Set(allSellerData.map(s => s.vendedor))];
+    
+    uniqueSellers.forEach(seller => {
+        if (seller) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center mb-2';
+            div.innerHTML = `
+                <input type="checkbox" id="print-${seller}" value="${seller}" class="mr-2">
+                <label for="print-${seller}">${seller}</label>
+            `;
+            container.appendChild(div);
+        }
+    });
+    
+    document.getElementById('individualPrintSelection').style.display = 'block';
+}
+
+// Imprimir selecionados
+function printSelectedSellers() {
+    const checkboxes = document.querySelectorAll('#sellerCheckboxes input[type="checkbox"]:checked');
+    
+    // Salva o filtro atual
+    const currentFilter = document.getElementById('sellerFilter').value;
+    
+    checkboxes.forEach((checkbox, index) => {
+        setTimeout(() => {
+            // Aplica filtro para o vendedor selecionado
+            document.getElementById('sellerFilter').value = checkbox.value;
+            filterTable();
+            
+            // Imprime
+            window.print();
+            
+            // Restaura filtro original após imprimir
+            setTimeout(() => {
+                document.getElementById('sellerFilter').value = currentFilter;
+                filterTable();
+            }, 1000);
+        }, index * 1000); // Delay de 1s entre cada impressão
+    });
+    
+    closePrintModal();
+}
+
+// Atualize esta linha no seu evento de processamento PDF (dentro do try, após populateSellerFilter):
+// Adicione isto:
+togglePrintContainer(true); 
     </script>
 </body>
 </html>
