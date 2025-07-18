@@ -1120,7 +1120,7 @@ document.getElementById('processPdfButton').addEventListener('click', async () =
             exportContainer.classList.remove('hidden');
             
             // Configura o botão de impressão após carregar os dados
-            printBtn.onclick = generatePrintVersion;
+            printBtn.onclick = openPrintModal;
         } else {
             throw new Error("Nenhum dado de vendedor encontrado.");
         }
@@ -1144,15 +1144,5 @@ const idealValues = {
 
 let allSellerData = [];
     </script>
-    <div id="printModal" class="print-modal hidden">
-        <div class="print-modal-content">
-            <h3>Selecione os vendedores para imprimir</h3>
-            <div id="printModalCheckboxes"></div>
-            <div class="print-modal-actions">
-                <button id="cancelPrint" class="px-4 py-2 bg-gray-300 rounded-md">Cancelar</button>
-                <button id="confirmPrint" class="px-4 py-2 bg-blue-600 text-white rounded-md">Imprimir Selecionados</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
