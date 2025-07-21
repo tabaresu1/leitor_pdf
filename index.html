@@ -652,7 +652,7 @@ function generatePrintVersion(mode = 'all', selectedSellers = []) {
                             if (!sellerData) return '';
 
                             return `
-                                <div class="individual-report">
+                                <div class="individual-report" style="page-break-after: always;">
                                     <h2 style="font-size: 12pt; margin-bottom: 8px;">Vendedor: ${sellerData.vendedor}</h2>
                                     <table>
                                         <thead>
