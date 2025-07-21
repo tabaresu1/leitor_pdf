@@ -589,11 +589,19 @@ function generatePrintRows(data = allSellerData) {
     }).join('');
 }
 
-function generatePrintVersion() {
-    const selectedVendedor = document.getElementById('sellerFilter').value;
-    const printData = selectedVendedor === 'all' 
-        ? allSellerData 
-        : allSellerData.filter(seller => seller.vendedor === selectedVendedor);
+function generatePrintVersion(mode = 'all', selectedSellers = []) {
+    let printData = [];
+
+    if (mode === 'all') {
+        printData = allSellerData;
+    } else if (mode === 'selected') {
+        printData = allSellerData.filter(seller => selectedSellers.includes(seller.vendedor));
+    } else {
+        const selectedVendedor = document.getElementById('sellerFilter').value;
+        printData = selectedVendedor === 'all'
+            ? allSellerData
+            : allSellerData.filter(seller => seller.vendedor === selectedVendedor);
+    }
 
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -602,101 +610,103 @@ function generatePrintVersion() {
         <head>
             <title>Relatório de Desempenho - ${new Date().toLocaleDateString()}</title>
             <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 10px;
-                }
-                .print-header {
-                    text-align: center;
-                    margin-bottom: 15px;
-                }
-                .print-header h1 {
-                    font-size: 16pt;
-                    margin-bottom: 5px;
-                }
-                .print-header p {
-                    font-size: 10pt;
-                    color: #555;
-                }
-                .print-version table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 8pt;
-                }
-                .print-version th {
-                    background-color: #f3f4f6;
-                    padding: 6px;
-                    text-align: left;
-                    border: 1px solid #ddd;
-                    font-weight: bold;
-                }
-                .print-version td {
-                    padding: 5px;
-                    border: 1px solid #ddd;
-                    vertical-align: top;
-                }
-                .print-version td div {
-                    margin: 2px 0;
-                    line-height: 1.3;
-                }
+                body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
+                .print-header { text-align: center; margin-bottom: 15px; }
+                .print-header h1 { font-size: 16pt; margin-bottom: 5px; }
+                .print-header p { font-size: 10pt; color: #555; }
+                table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+                th { background-color: #f3f4f6; padding: 6px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
+                td { padding: 5px; border: 1px solid #ddd; vertical-align: top; }
+                td div { margin: 2px 0; line-height: 1.3; }
                 .status-ideal { color: #10b981; }
                 .status-above-ideal { color: #ef4444; }
                 .status-below-ideal { color: #f97316; }
-                .print-footer {
-                    text-align: center;
-                    margin-top: 15px;
-                    font-size: 8pt;
-                    color: #777;
-                }
-                .print-version td div:last-child {
-                    font-size: 7pt;
-                    margin-top: 3px;
-                }
-                @page {
-                    size: A4 landscape;
-                    margin: 5mm;
-                }
+                .print-footer { text-align: center; margin-top: 15px; font-size: 8pt; color: #777; }
+                .suggestions-container { margin-top: 15px; font-size: 9pt; }
+                .suggestions-container ul { margin-top: 5px; padding-left: 18px; }
+                .suggestions-container li { margin-bottom: 6px; }
+                .individual-report { page-break-after: always; margin-bottom: 20px; }
+                @page { size: A4 landscape; margin: 5mm; }
             </style>
         </head>
         <body>
             <div class="print-header">
                 <h1>Relatório de Desempenho de Vendas</h1>
-                <p>${selectedVendedor !== 'all' ? `Vendedor: ${selectedVendedor}` : 'Todos os Vendedores'}</p>
+                <p>${
+                    mode === 'all'
+                        ? 'Todos os Vendedores'
+                        : mode === 'selected'
+                        ? `Vendedores Selecionados (${selectedSellers.length})`
+                        : document.getElementById('sellerFilter').value !== 'all'
+                        ? `Vendedor: ${document.getElementById('sellerFilter').value}`
+                        : 'Todos os Vendedores'
+                }</p>
                 <p>${new Date().toLocaleDateString('pt-BR')}</p>
             </div>
-            
+
             <div class="print-version">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Vendedor</th>
-                            <th>Venda MED ETICO</th>
-                            <th>% MED ETICO</th>
-                            <th>% Desc MED ETICO</th>
-                            <th>Venda GEN/SIMIL</th>
-                            <th>% GEN/SIMIL</th>
-                            <th>% Desc GEN/SIMIL</th>
-                            <th>Pontos</th>
-                            <th>Meta</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${generatePrintRows(printData)}
-                    </tbody>
-                </table>
-                
-                <!-- CORREÇÃO: Mostrar sugestões apenas uma vez, no final -->
-                <div class="suggestions-container">
-                    <h3>Sugestões e Motivações</h3>
-                    ${generateCombinedSuggestions(printData)}
-                </div>
+                ${
+                    mode === 'selected'
+                        ? selectedSellers.map(sellerName => {
+                            const sellerData = allSellerData.find(s => s.vendedor === sellerName);
+                            if (!sellerData) return '';
+
+                            return `
+                                <div class="individual-report">
+                                    <h2 style="font-size: 12pt; margin-bottom: 8px;">Vendedor: ${sellerData.vendedor}</h2>
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Vendedor</th>
+                                                <th>Venda MED ETICO</th>
+                                                <th>% MED ETICO</th>
+                                                <th>% Desc MED ETICO</th>
+                                                <th>Venda GEN/SIMIL</th>
+                                                <th>% GEN/SIMIL</th>
+                                                <th>% Desc GEN/SIMIL</th>
+                                                <th>Pontos</th>
+                                                <th>Meta</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${generatePrintRows([sellerData])}
+                                        </tbody>
+                                    </table>
+                                    ${generateSuggestions(sellerData)}
+                                </div>
+                            `;
+                        }).join('')
+                        : `
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Vendedor</th>
+                                        <th>Venda MED ETICO</th>
+                                        <th>% MED ETICO</th>
+                                        <th>% Desc MED ETICO</th>
+                                        <th>Venda GEN/SIMIL</th>
+                                        <th>% GEN/SIMIL</th>
+                                        <th>% Desc GEN/SIMIL</th>
+                                        <th>Pontos</th>
+                                        <th>Meta</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${generatePrintRows(printData)}
+                                </tbody>
+                            </table>
+                            <div class="suggestions-container">
+                                <h3>Sugestões e Motivações</h3>
+                                ${generateCombinedSuggestions(printData)}
+                            </div>
+                        `
+                }
             </div>
-            
+
             <div class="print-footer">
                 Relatório gerado em ${new Date().toLocaleString('pt-BR')}
             </div>
-            
+
             <script>
                 window.onload = function() {
                     setTimeout(function() {
@@ -708,8 +718,10 @@ function generatePrintVersion() {
         </body>
         </html>
     `);
+
     printWindow.document.close();
 }
+
 
 // Nova função para gerar sugestões combinadas
 function generateCombinedSuggestions(sellers) {
@@ -756,260 +768,206 @@ function generateCombinedSuggestions(sellers) {
     `;
 }
 
-// ======================
-// CORE DE IMPRESSÃO
-// ======================
+// =============================================
+// FUNÇÕES DE IMPRESSÃO
+// =============================================
 
-const PrintSystem = {
-    /**
-     * Abre o modal de impressão
-     */
-    openModal: function() {
-        document.getElementById('printModal').style.display = 'flex';
-    },
+// Abre o modal de impressão
+function openPrintModal() {
+    document.getElementById('printModal').style.display = 'flex';
+}
 
-    /**
-     * Fecha o modal
-     */
-    closeModal: function() {
-        document.getElementById('printModal').style.display = 'none';
-        document.getElementById('individualPrintSelection').style.display = 'none';
-    },
+// Fecha o modal
+function closePrintModal() {
+    document.getElementById('printModal').style.display = 'none';
+    document.getElementById('individualPrintSelection').style.display = 'none';
+}
 
-    /**
-     * Imprime relatório geral (todos vendedores)
-     */
-    printGeneralReport: function() {
-        const html = this.generateGeneralReportHTML(allSellerData);
-        this.printHTML(html);
-        this.closeModal();
-    },
+// Imprime todos os relatórios
+function printAllReports() {
+    generatePrintVersion('all');
+    closePrintModal();
+}
 
-    /**
-     * Prepara seleção de vendedores individuais
-     */
-    setupIndividualSelection: function() {
-        const container = document.getElementById('sellerCheckboxes');
-        container.innerHTML = '';
-
-        const uniqueSellers = [...new Set(allSellerData.map(s => s.vendedor))];
-        
-        uniqueSellers.forEach(seller => {
-            if (seller) {
-                const div = document.createElement('div');
-                div.className = 'flex items-center mb-2';
-                div.innerHTML = `
-                    <input type="checkbox" id="print-${this.escapeId(seller)}" 
-                           value="${this.escapeHtml(seller)}" class="mr-2" checked>
-                    <label for="print-${this.escapeId(seller)}">${this.escapeHtml(seller)}</label>
-                `;
-                container.appendChild(div);
-            }
-        });
-
-        document.getElementById('individualPrintSelection').style.display = 'block';
-    },
-
-    /**
-     * Imprime relatórios individuais selecionados
-     */
-    printSelectedReports: function() {
-        const checkboxes = document.querySelectorAll('#sellerCheckboxes input[type="checkbox"]:checked');
-        const selectedSellers = Array.from(checkboxes).map(cb => cb.value);
-
-        if (selectedSellers.length === 0) {
-            alert('Selecione pelo menos um vendedor');
-            return;
+// Abre a seleção de vendedores individuais
+function openIndividualPrintSelection() {
+    const container = document.getElementById('sellerCheckboxes');
+    container.innerHTML = '';
+    
+    const uniqueSellers = [...new Set(allSellerData.map(s => s.vendedor))];
+    
+    uniqueSellers.forEach(seller => {
+        if (seller) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center mb-2';
+            div.innerHTML = `
+                <input type="checkbox" id="print-${seller}" value="${seller}" class="mr-2">
+                <label for="print-${seller}">${seller}</label>
+            `;
+            container.appendChild(div);
         }
-
-        this.closeModal();
-
-        selectedSellers.forEach((vendedor, index) => {
-            setTimeout(() => {
-                const sellerData = allSellerData.filter(s => s.vendedor === vendedor);
-                const html = this.generateIndividualReportHTML(vendedor, sellerData);
-                this.printHTML(html);
-            }, index * 800);
-        });
-    },
-
-    /**
-     * Gera HTML para relatório geral
-     */
-    generateGeneralReportHTML: function(data) {
-        return `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Relatório Geral - ${this.escapeHtml(new Date().toLocaleDateString('pt-BR'))}</title>
-    <style>
-        body { font-family: Arial; margin: 15px; color: #333; }
-        h1 { font-size: 18pt; text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #f8f9fa; }
-        @page { size: A4 landscape; margin: 10mm; }
-    </style>
-</head>
-<body>
-    <h1>Relatório Geral de Vendas</h1>
-    <p style="text-align: center;">${this.escapeHtml(new Date().toLocaleDateString('pt-BR'))}</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Vendedor</th>
-                <th>Vendas</th>
-                <th>% Ético</th>
-                <th>Meta</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${data.map(seller => `
-                <tr>
-                    <td>${this.escapeHtml(seller.vendedor || 'N/I')}</td>
-                    <td>${this.formatCurrency(seller.totalVenda)}</td>
-                    <td>${this.formatPercentage(seller.vendaMedEtico / seller.totalVenda)}</td>
-                    <td>${this.formatCurrency(seller.metaPontos)}</td>
-                </tr>
-            `).join('')}
-        </tbody>
-    </table>
-</body>
-</html>
-        `;
-    },
-
-    /**
-     * Gera HTML para relatório individual
-     */
-    generateIndividualReportHTML: function(vendedor, data) {
-        if (!data || data.length === 0) return '';
-        const seller = data[0];
-        
-        return `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Relatório - ${this.escapeHtml(vendedor)}</title>
-    <style>
-        body { font-family: Arial; margin: 15px; color: #333; }
-        h1 { font-size: 18pt; text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #f8f9fa; }
-        .status-good { color: #28a745; }
-        .status-warning { color: #ffc107; }
-        .status-bad { color: #dc3545; }
-        @page { size: A4 landscape; margin: 10mm; }
-    </style>
-</head>
-<body>
-    <h1>Relatório Individual</h1>
-    <p style="text-align: center;">${this.escapeHtml(vendedor)} - ${this.escapeHtml(new Date().toLocaleDateString('pt-BR'))}</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Indicador</th>
-                <th>Valor</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Vendas Totais</td>
-                <td>${this.formatCurrency(seller.totalVenda)}</td>
-                <td class="${this.getStatusClass(seller.totalVenda, seller.metaPontos)}">
-                    ${this.getStatusText(seller.totalVenda, seller.metaPontos)}
-                </td>
-            </tr>
-            <!-- Adicione mais linhas conforme necessário -->
-        </tbody>
-    </table>
-</body>
-</html>
-        `;
-    },
-
-    /**
-     * Função para imprimir HTML
-     */
-    printHTML: function(html) {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(html);
-        printWindow.document.close();
-        
-        // Garante que a impressão ocorra após o carregamento
-        printWindow.onload = function() {
-            setTimeout(() => {
-                printWindow.print();
-                setTimeout(() => printWindow.close(), 500);
-            }, 300);
-        };
-    },
-
-    // ======================
-    // UTILITÁRIOS
-    // ======================
-    
-    escapeHtml: function(text) {
-        if (!text) return '';
-        return text.toString()
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    },
-
-    escapeId: function(text) {
-        if (!text) return '';
-        return text.toString().replace(/[^a-z0-9_-]/gi, '');
-    },
-
-    formatCurrency: function(value) {
-        return Math.round(value || 0).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
-    },
-
-    formatPercentage: function(value) {
-        return ((value || 0) * 100).toFixed(2) + '%';
-    },
-
-    getStatusClass: function(value, target) {
-        if (value >= target) return 'status-good';
-        if (value >= target * 0.8) return 'status-warning';
-        return 'status-bad';
-    },
-
-    getStatusText: function(value, target) {
-        if (value >= target) return 'Meta atingida';
-        if (value >= target * 0.8) return 'Abaixo da meta';
-        return 'Meta não atingida';
-    }
-};
-
-// ======================
-// INTEGRAÇÃO
-// ======================
-
-// Vincule os eventos (execute após o carregamento do DOM)
-document.addEventListener('DOMContentLoaded', function() {
-    // Botão principal
-    document.getElementById('printOptimizedBtn').addEventListener('click', function() {
-        PrintSystem.openModal();
     });
     
-    // Botões do modal
-    document.querySelector('[onclick="PrintSystem.printGeneralReport()"]')?.addEventListener('click', PrintSystem.printGeneralReport);
-    document.querySelector('[onclick="PrintSystem.setupIndividualSelection()"]')?.addEventListener('click', PrintSystem.setupIndividualSelection);
-    document.querySelector('[onclick="PrintSystem.printSelectedReports()"]')?.addEventListener('click', PrintSystem.printSelectedReports);
-});
+    document.getElementById('individualPrintSelection').style.display = 'block';
+}
+
+// Imprime os vendedores selecionados
+function printSelectedSellers() {
+    const checkboxes = document.querySelectorAll('#sellerCheckboxes input[type="checkbox"]:checked');
+    const selectedSellers = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedSellers.length === 0) {
+        alert('Selecione pelo menos um vendedor');
+        return;
+    }
+    
+    generatePrintVersion('selected', selectedSellers);
+    closePrintModal();
+}
+
+// Gera versão para impressão (atualizada)
+function generatePrintVersion(mode = 'all', selectedSellers = []) {
+    let printData = [];
+    
+    if (mode === 'all') {
+        printData = allSellerData;
+    } else if (mode === 'selected') {
+        printData = allSellerData.filter(seller => selectedSellers.includes(seller.vendedor));
+    } else {
+        // Modo individual (filtrado)
+        const selectedVendedor = document.getElementById('sellerFilter').value;
+        printData = selectedVendedor === 'all' 
+            ? allSellerData 
+            : allSellerData.filter(seller => seller.vendedor === selectedVendedor);
+    }
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Relatório de Desempenho - ${new Date().toLocaleDateString()}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
+                .print-header { text-align: center; margin-bottom: 15px; }
+                .print-header h1 { font-size: 16pt; margin-bottom: 5px; }
+                .print-header p { font-size: 10pt; color: #555; }
+                .print-version table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+                .print-version th { background-color: #f3f4f6; padding: 6px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
+                .print-version td { padding: 5px; border: 1px solid #ddd; vertical-align: top; }
+                .print-version td div { margin: 2px 0; line-height: 1.3; }
+                .status-ideal { color: #10b981; }
+                .status-above-ideal { color: #ef4444; }
+                .status-below-ideal { color: #f97316; }
+                .print-footer { text-align: center; margin-top: 15px; font-size: 8pt; color: #777; }
+                .print-version td div:last-child { font-size: 7pt; margin-top: 3px; }
+                @page { size: A4 landscape; margin: 5mm; }
+                .suggestions-container { margin-top: 15px; font-size: 9pt; }
+                .suggestions-container h3 { margin-bottom: 5px; }
+                .suggestions-container ul { margin-top: 5px; padding-left: 18px; }
+                .suggestions-container li { margin-bottom: 6px; }
+            </style>
+        </head>
+        <body>
+            <div class="print-header">
+                <h1>Relatório de Desempenho de Vendas</h1>
+                <p>${mode === 'all' ? 'Todos os Vendedores' : 
+                   mode === 'selected' ? `Vendedores Selecionados (${selectedSellers.length})` : 
+                   document.getElementById('sellerFilter').value !== 'all' ? 
+                   `Vendedor: ${document.getElementById('sellerFilter').value}` : 
+                   'Todos os Vendedores'}</p>
+                <p>${new Date().toLocaleDateString('pt-BR')}</p>
+            </div>
+            
+            <div class="print-version">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vendedor</th>
+                            <th>Venda MED ETICO</th>
+                            <th>% MED ETICO</th>
+                            <th>% Desc MED ETICO</th>
+                            <th>Venda GEN/SIMIL</th>
+                            <th>% GEN/SIMIL</th>
+                            <th>% Desc GEN/SIMIL</th>
+                            <th>Pontos</th>
+                            <th>Meta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generatePrintRows(printData)}
+                    </tbody>
+                </table>
+                
+                <div class="suggestions-container">
+                    <h3>Sugestões e Motivações</h3>
+                    ${generateCombinedSuggestions(printData)}
+                </div>
+            </div>
+            
+            <div class="print-footer">
+                Relatório gerado em ${new Date().toLocaleString('pt-BR')}
+            </div>
+            
+            <script>
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                        window.close();
+                    }, 200);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+// Função auxiliar para gerar linhas da tabela
+function generatePrintRows(data) {
+    return data.map(seller => {
+        const genericosSimilares = calculateGenericosSimilares(seller);
+        const percentVendasMedEtico = seller.totalVenda > 0 ? 
+            seller.vendaMedEtico / seller.totalVenda : 0;
+        const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
+            genericosSimilares.vendaLiquida / seller.totalVenda : 0;
+
+        const statusVendasEtico = getStatus(percentVendasMedEtico, null, 'percentVendasMedEtico');
+        const statusDescontoEtico = getStatus(seller.descontoEticoPercent, null, 'percentDescontoEtico');
+        const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, null, 'percentVendasGenericosSimilares');
+        const statusDescontoGenericos = getStatus(genericosSimilares.percentDesconto, null, 'percentDescontoGenericosSimilares');
+        const statusPontos = getStatus(seller.totalVenda, null, 'pontos');
+
+        return `
+            <tr>
+                <td>${seller.vendedor || 'N/I'}</td>
+                <td>${Math.round(seller.vendaMedEtico)}</td>
+                <td>
+                    ${formatPercentage(percentVendasMedEtico)}
+                    <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
+                </td>
+                <td>
+                    ${formatPercentage(seller.descontoEticoPercent)}
+                    <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
+                </td>
+                <td>${Math.round(genericosSimilares.vendaLiquida)}</td>
+                <td>
+                    ${formatPercentage(percentVendasGenericosSimilares)}
+                    <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
+                </td>
+                <td>
+                    ${formatPercentage(genericosSimilares.percentDesconto)}
+                    <div class="${statusDescontoGenericos.className}">${statusDescontoGenericos.message}</div>
+                </td>
+                <td>${Math.round(seller.totalVenda)}</td>
+                <td>
+                    ${Math.round(seller.metaPontos)}
+                    <div class="${statusPontos.className}">${statusPontos.message}</div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
 
 // Atualize o evento do botão de impressão existente
 document.getElementById('printOptimizedBtn').addEventListener('click', function() {
