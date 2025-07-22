@@ -37,25 +37,25 @@ def parse_pdf_data(raw_data):
             match = re.search(r'Usuário:\s*([A-Za-zÀ-ú\s\-0-9]+)', row_str)
             if match:
                 current_vendedor = match.group(1).strip()
-                # Ajuste na condição para não pular KELLY PEREIRA se ALDO-37 não estiver na mesma linha
-                # Se ALDO-37 for um usuário separado, ele será processado individualmente
-                if current_vendedor.upper() == 'ALDO-37' or current_vendedor.upper() == '16-KELLY PEREIRA':
-                     vendedores[current_vendedor]['vendedor'] = current_vendedor
-                else:
-                    vendedores[current_vendedor]['vendedor'] = current_vendedor
+                # A condição para filtrar Kelly Pereira foi mantida conforme sua solicitação.
+                if 'KELLY PEREIRA' in current_vendedor.upper() and 'ALDO-37' not in current_vendedor.upper():
+                    continue
+                vendedores[current_vendedor]['vendedor'] = current_vendedor
             continue
 
         # Processa as linhas de dados se um vendedor estiver definido
         if current_vendedor and 'PRINCIPAL >' in row_str:
             try:
-                # Usa regex para extrair a categoria de forma mais flexível
+                # *** INÍCIO DA CORREÇÃO PARA RECONHECIMENTO DE CATEGORIAS ***
+                # Usa regex para extrair a categoria de forma mais flexível,
+                # reconhecendo as formas abreviadas (ex: MED ETI, MED GE, MED SIMI)
                 categoria_match = re.search(r'PRINCIPAL > (MED ETI(?:CO)?|MED GEN(?:E)?|MED SIMI(?:L)?)', row_str)
                 if not categoria_match:
                     continue # Pula linhas que não correspondem a uma categoria esperada
 
                 categoria_completa = categoria_match.group(1).strip()
 
-                # Normaliza a categoria para facilitar a lógica
+                # Normaliza a categoria para facilitar a lógica subsequente
                 if 'ETI' in categoria_completa:
                     categoria_normalizada = 'MED ETICO'
                 elif 'GEN' in categoria_completa:
@@ -64,90 +64,51 @@ def parse_pdf_data(raw_data):
                     categoria_normalizada = 'MED SIMIL'
                 else:
                     continue # Pula se não for uma das categorias conhecidas
+                # *** FIM DA CORREÇÃO PARA RECONHECIMENTO DE CATEGORIAS ***
 
-                # Encontra a venda: Tenta pegar o terceiro elemento que pode ser um número
                 # A coluna de venda é sempre a terceira (índice 2)
                 venda_str = row_str_list[2]
                 venda_valor = float(venda_str.replace('.', '').replace(',', '.'))
                 
                 valor_desconto = 0.0
                 percentual_desconto = 0.0
+                
+                # Para manter a lógica de extração de desconto como estava no seu último código,
+                # usando row[4] para valor absoluto e row[5] para percentual.
+                # Se o PDF de 21/07 ainda apresentar problemas aqui, será necessário uma lógica mais robusta.
+                if len(row_str_list) > 4 and str(row_str_list[4]).strip():
+                    try:
+                        valor_desconto = float(str(row_str_list[4]).strip().replace('.', '').replace(',', '.'))
+                    except ValueError:
+                        # Em caso de erro na conversão (ex: célula vazia ou formatada diferente), manter 0.0
+                        pass
+                
+                if len(row_str_list) > 5 and str(row_str_list[5]).strip():
+                    try:
+                        percentual_desconto = float(str(row_str_list[5]).strip().replace(',', '.')) / 100.0
+                    except ValueError:
+                        # Em caso de erro na conversão, manter 0.0
+                        pass
 
-                # A maior dificuldade está em como o camelot lida com a fusão de células.
-                # No PDF de 21/07, a coluna de desconto tem dois valores na mesma célula
-                # para a linha de "MED SIMI" para ALDO-37.
-                # Precisamos de uma lógica mais robusta para extrair o percentual.
-
-                # Tenta extrair o percentual de desconto da coluna que contém "% Tot." ou "%"
-                # A posição pode variar, mas geralmente está à direita da venda.
-                # Vamos procurar a coluna que contém o '%' no cabeçalho ou no valor
-                
-                # Tenta encontrar o percentual de desconto. Pode ser row[4] ou row[5] dependendo do PDF.
-                # É crucial que o camelot tenha extraído a tabela corretamente para que os índices funcionem.
-                # A estratégia 'stream' com edge_tol=500 pode agrupar células.
-
-                # Para MED ETICO, o percentual de desconto vem na coluna 5 (índice 4 no PDF de 19/07, ou pode ser diferente no 21/07)
-                # Para MED GENE e MED SIMIL, o valor do desconto vem na coluna 4 (índice 3 no PDF de 19/07)
-                
-                # Vamos tentar uma abordagem mais flexível para as colunas de desconto,
-                # procurando por padrões de números e porcentagens.
-                
-                # Para o PDF 21/07, a coluna de 'Desconto %' (índice 4 no dataframe) contém dois valores,
-                # e a coluna de 'Custo %' (índice 5 no dataframe) também.
-                # No PDF de 19/07, a coluna 'Desconto' (índice 4) tem valor e percentual.
-                
-                # Ajuste: No PDF 19/07, a coluna 4 é 'Desconto' (valor + percentual), coluna 5 é 'Custo %', coluna 6 é 'Lucro %'
-                # No PDF 21/07, a coluna 4 é 'Desconto %', coluna 5 é 'Custo %'.
-
-                # VAMOS ASSUMIR A ESTRUTURA MAIS CONSISTENTE DO PDF 21/07
-                # Onde Desconto (%) está na coluna 4 (índice 3 do DF do Camelot) e Custo (%) na coluna 5 (índice 4)
-                # E o percentual de desconto para 'MED ETICO' parece vir da coluna 'Desconto %'
-                # E o valor do desconto para 'MED GENE'/'MED SIMIL' também da coluna 'Desconto %'
-                
                 if categoria_normalizada == 'MED ETICO':
-                    # No PDF de 21/07, o percentual de desconto do ético parece vir da coluna 4 (índice 3)
-                    if len(row_str_list) > 3 and row_str_list[3].strip(): # Verifica se a coluna de 'Desconto %' existe e não está vazia
-                        desconto_etico_str = row_str_list[3].strip().replace(',', '.')
-                        # Extrai apenas o valor percentual, que geralmente é o segundo número
-                        match_percent = re.search(r'([\d\.]+)[\s%]*$', desconto_etico_str)
-                        if match_percent:
-                            percentual_desconto = float(match_percent.group(1)) / 100.0
                     vendedores[current_vendedor]['vendaMedEtico'] = venda_valor
                     vendedores[current_vendedor]['descontoEticoPercent'] = percentual_desconto
                 
                 elif categoria_normalizada == 'MED GENE':
-                    # No PDF de 21/07, o valor do desconto (absoluto) para genéricos/similares
-                    # também vem na coluna 4 (índice 3) para ALDO-37
-                    if len(row_str_list) > 3 and row_str_list[3].strip():
-                        # Pode ter o percentual e o valor absoluto juntos, ou apenas um.
-                        # Vamos procurar pelo valor absoluto.
-                        valor_desconto_str = row_str_list[3].strip().replace('.', '').replace(',', '.')
-                        # Extrai o primeiro número que parece ser o valor absoluto
-                        match_valor = re.search(r'^([\d\.]+)', valor_desconto_str)
-                        if match_valor:
-                            valor_desconto = float(match_valor.group(1))
                     vendedores[current_vendedor]['vendaMedGene'] = venda_valor
                     vendedores[current_vendedor]['descontoMedGene'] = valor_desconto
                 
                 elif categoria_normalizada == 'MED SIMIL':
-                    # Similar ao MED GENE
-                    if len(row_str_list) > 3 and row_str_list[3].strip():
-                        valor_desconto_str = row_str_list[3].strip().replace('.', '').replace(',', '.')
-                        match_valor = re.search(r'^([\d\.]+)', valor_desconto_str)
-                        if match_valor:
-                            valor_desconto = float(match_valor.group(1))
                     vendedores[current_vendedor]['vendaMedSimil'] = venda_valor
                     vendedores[current_vendedor]['descontoMedSimil'] = valor_desconto
 
             except Exception as e:
                 print(f"Erro na linha: {row_str_list} | Erro: {str(e)}")
-                # Para depuração mais fácil, você pode manter as linhas problemáticas
-                # ou logar mais detalhes.
                 continue
 
     # Calcula totais
     for vendedor in vendedores.values():
-        if vendedor['vendedor']: # Garante que estamos processando um vendedor válido
+        if vendedor['vendedor']:
             vendedor['totalVenda'] = (
                 vendedor['vendaMedEtico'] + 
                 vendedor['vendaMedGene'] + 
@@ -175,24 +136,20 @@ def upload_pdf():
             flavor='stream',
             pages='all',
             strip_text='\n',
-            edge_tol=500, # Mantido alto para agrupar colunas que podem estar muito próximas
-            # Adicionar process_background=True se houver linhas que são ignoradas devido à complexidade do layout
-            # process_background=True
+            edge_tol=500
         )
 
         if not tables:
-            raise ValueError("Nenhuma tabela detectada no PDF. Verifique se o PDF contém tabelas reconhecíveis.")
+            raise ValueError("Nenhuma tabela detectada")
 
         all_data = []
         for table in tables:
-            # Imprime o DataFrame para inspeção durante a depuração
-            print(f"DataFrame extraído da tabela:\n{table.df}") 
             all_data.extend(table.df.values.tolist())
 
         parsed_data = parse_pdf_data(all_data)
 
         if not parsed_data:
-            raise ValueError("Nenhum dado de vendedor válido encontrado após a análise. Verifique o conteúdo do PDF e a lógica de parsing.")
+            raise ValueError("Nenhum vendedor válido encontrado após a análise")
 
         return jsonify({
             "success": True,
@@ -204,7 +161,7 @@ def upload_pdf():
         print(f"Erro durante o processamento do PDF: {str(e)}")
         print(traceback.format_exc())
         return jsonify({
-            "error": f"Erro ao processar PDF: {str(e)}. Por favor, verifique o formato do seu PDF e a estrutura das tabelas. Detalhes: {traceback.format_exc()}",
+            "error": f"Erro ao processar PDF: {str(e)}. Verifique o formato do seu PDF ou a estrutura das tabelas.",
             "details": str(e)
         }), 500
 
