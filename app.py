@@ -49,7 +49,7 @@ def parse_pdf_data(raw_data):
                 # *** INÍCIO DA CORREÇÃO PARA RECONHECIMENTO DE CATEGORIAS ***
                 # Usa regex para extrair a categoria de forma mais flexível,
                 # reconhecendo as formas abreviadas (ex: MED ETI, MED GE, MED SIMI)
-                categoria_match = re.search(r'PRINCIPAL > (MED ETI(?:CO)?|MED GEN(?:E)?|MED SIMI(?:L)?)', row_str)
+                categoria_match = re.search(r'PRINCIPAL > (MED ETI(?:CO)?|MED GE(?:NE)?|MED SIMI(?:L)?)', row_str)
                 if not categoria_match:
                     continue # Pula linhas que não correspondem a uma categoria esperada
 
@@ -58,7 +58,7 @@ def parse_pdf_data(raw_data):
                 # Normaliza a categoria para facilitar a lógica subsequente
                 if 'ETI' in categoria_completa:
                     categoria_normalizada = 'MED ETICO'
-                elif 'GEN' in categoria_completa:
+                elif 'GE' in categoria_completa:
                     categoria_normalizada = 'MED GENE'
                 elif 'SIMI' in categoria_completa:
                     categoria_normalizada = 'MED SIMIL'
