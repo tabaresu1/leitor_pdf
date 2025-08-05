@@ -16,46 +16,47 @@ def parse_pdf_data(raw_data):
     vendedores = defaultdict(lambda: {
         'vendedor': None,
         'vendaMedEtico': 0,
-        'descontoEticoPercent': 0,  # Já em formato decimal (ex: 15.5% = 0.155)
-        'descontoMedGene': 0,       # Valor absoluto do desconto para genéricos
-        'descontoMedSimil': 0,      # Valor absoluto do desconto para similares
+        'descontoEticoPercent': 0,
+        'descontoMedGene': 0,
+        'descontoMedSimil': 0,
         'vendaMedGene': 0,
         'vendaMedSimil': 0,
+        'qtdMedEtico': 0,      # NOVO
+        'qtdMedGene': 0,       # NOVO
+        'qtdMedSimil': 0,      # NOVO
         'totalVenda': 0,
+        'totalQtd': 0,         # NOVO
         'metaPontos': 100000
     })
 
     current_vendedor = None
+    idx_itens = None
 
     for row in raw_data:
-        # Garante que todos os elementos da linha são strings e remove espaços em branco extras
         row_str_list = [str(x).strip() for x in row]
         row_str = '|'.join(row_str_list)
 
-        # Atualiza o vendedor atual
+        # Detecta o índice da coluna "Itens" no cabeçalho
+        if idx_itens is None and any("Itens" in x for x in row_str_list):
+            idx_itens = next((i for i, x in enumerate(row_str_list) if "Itens" in x), None)
+            continue
+
         if 'Usuário:' in row_str:
             match = re.search(r'Usuário:\s*([A-Za-zÀ-ú\s\-0-9]+)', row_str)
             if match:
                 current_vendedor = match.group(1).strip()
-                # A condição para filtrar Kelly Pereira foi mantida conforme sua solicitação.
                 if 'KELLY PEREIRA' in current_vendedor.upper() and 'ALDO-37' not in current_vendedor.upper():
                     continue
                 vendedores[current_vendedor]['vendedor'] = current_vendedor
             continue
 
-        # Processa as linhas de dados se um vendedor estiver definido
         if current_vendedor and 'PRINCIPAL >' in row_str:
             try:
-                # *** INÍCIO DA CORREÇÃO PARA RECONHECIMENTO DE CATEGORIAS ***
-                # Usa regex para extrair a categoria de forma mais flexível,
-                # reconhecendo as formas abreviadas (ex: MED ETI, MED GE, MED SIMI)
                 categoria_match = re.search(r'PRINCIPAL > (MED ETI(?:CO|COS)?|MED GE(?:E|NE|NERICOS)?|MED SIMI(?:L|LAR|LARES)?)', row_str)
                 if not categoria_match:
-                    continue # Pula linhas que não correspondem a uma categoria esperada
+                    continue
 
                 categoria_completa = categoria_match.group(1).strip()
-
-                # Normaliza a categoria para facilitar a lógica subsequente
                 if 'ETI' in categoria_completa:
                     categoria_normalizada = 'MED ETICO'
                 elif 'GE' in categoria_completa:
@@ -63,56 +64,61 @@ def parse_pdf_data(raw_data):
                 elif 'SIMI' in categoria_completa:
                     categoria_normalizada = 'MED SIMIL'
                 else:
-                    continue # Pula se não for uma das categorias conhecidas
-                # *** FIM DA CORREÇÃO PARA RECONHECIMENTO DE CATEGORIAS ***
+                    continue
 
-                # A coluna de venda é sempre a terceira (índice 2)
                 venda_str = row_str_list[2]
                 venda_valor = float(venda_str.replace('.', '').replace(',', '.'))
-                
+
+                # Extrai quantidade de itens
+                qtd_valor = 0
+                if idx_itens is not None and len(row_str_list) > idx_itens:
+                    try:
+                        qtd_valor = int(row_str_list[idx_itens].replace('.', '').replace(',', ''))
+                    except ValueError:
+                        qtd_valor = 0
+
                 valor_desconto = 0.0
                 percentual_desconto = 0.0
-                
-                # Para manter a lógica de extração de desconto como estava no seu último código,
-                # usando row[4] para valor absoluto e row[5] para percentual.
-                # Se o PDF de 21/07 ainda apresentar problemas aqui, será necessário uma lógica mais robusta.
                 if len(row_str_list) > 4 and str(row_str_list[4]).strip():
                     try:
                         valor_desconto = float(str(row_str_list[4]).strip().replace('.', '').replace(',', '.'))
                     except ValueError:
-                        # Em caso de erro na conversão (ex: célula vazia ou formatada diferente), manter 0.0
                         pass
-                
+
                 if len(row_str_list) > 5 and str(row_str_list[5]).strip():
                     try:
                         percentual_desconto = float(str(row_str_list[5]).strip().replace(',', '.')) / 100.0
                     except ValueError:
-                        # Em caso de erro na conversão, manter 0.0
                         pass
 
                 if categoria_normalizada == 'MED ETICO':
                     vendedores[current_vendedor]['vendaMedEtico'] = venda_valor
                     vendedores[current_vendedor]['descontoEticoPercent'] = percentual_desconto
-                
+                    vendedores[current_vendedor]['qtdMedEtico'] = qtd_valor
                 elif categoria_normalizada == 'MED GENE':
                     vendedores[current_vendedor]['vendaMedGene'] = venda_valor
                     vendedores[current_vendedor]['descontoMedGene'] = valor_desconto
-                
+                    vendedores[current_vendedor]['qtdMedGene'] = qtd_valor
                 elif categoria_normalizada == 'MED SIMIL':
                     vendedores[current_vendedor]['vendaMedSimil'] = venda_valor
                     vendedores[current_vendedor]['descontoMedSimil'] = valor_desconto
+                    vendedores[current_vendedor]['qtdMedSimil'] = qtd_valor
 
             except Exception as e:
                 print(f"Erro na linha: {row_str_list} | Erro: {str(e)}")
                 continue
 
-    # Calcula totais
     for vendedor in vendedores.values():
         if vendedor['vendedor']:
             vendedor['totalVenda'] = (
-                vendedor['vendaMedEtico'] + 
-                vendedor['vendaMedGene'] + 
+                vendedor['vendaMedEtico'] +
+                vendedor['vendaMedGene'] +
                 vendedor['vendaMedSimil']
+            )
+            vendedor['totalQtd'] = (
+                vendedor['qtdMedEtico'] +
+                vendedor['qtdMedGene'] +
+                vendedor['qtdMedSimil']
             )
 
     return [v for v in vendedores.values() if v['vendedor']]

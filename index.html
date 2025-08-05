@@ -370,12 +370,14 @@ function getStatus(value, ideal, type) {
 function addSellerRow(sellerData) {
     const tbody = document.getElementById('spreadsheet-body');
     const genericosSimilares = calculateGenericosSimilares(sellerData);
-    
-    const percentVendasMedEtico = sellerData.totalVenda > 0 ? 
-        sellerData.vendaMedEtico / sellerData.totalVenda : 0;
-    
-    const percentVendasGenericosSimilares = sellerData.totalVenda > 0 ? 
-        genericosSimilares.vendaLiquida / sellerData.totalVenda : 0;
+
+    // NOVO: porcentagem por quantidade de itens vendidos
+    const percentVendasMedEtico = sellerData.totalQtd > 0 ? 
+        sellerData.qtdMedEtico / sellerData.totalQtd : 0;
+
+    const qtdGenericosSimilares = (sellerData.qtdMedGene || 0) + (sellerData.qtdMedSimil || 0);
+    const percentVendasGenericosSimilares = sellerData.totalQtd > 0 ? 
+        qtdGenericosSimilares / sellerData.totalQtd : 0;
 
     const statusVendasEtico = getStatus(percentVendasMedEtico, null, 'percentVendasMedEtico');
     const statusDescontoEtico = getStatus(sellerData.descontoEticoPercent, null, 'percentDescontoEtico');
@@ -389,7 +391,7 @@ function addSellerRow(sellerData) {
     row.innerHTML = `
         <td class="px-6 py-4 text-sm font-medium text-gray-900 col-vendedor">${sellerData.vendedor || 'N/I'}</td>
         <td class="px-6 py-4 text-sm text-gray-500 col-valores">
-            <div>${formatCurrency(sellerData.vendaMedEtico)}</div>
+            <div>${sellerData.qtdMedEtico}</div>
         </td>
         <td class="px-6 py-4 text-sm text-gray-500 col-percent">
             <div>${formatPercentage(percentVendasMedEtico)}</div>
@@ -400,7 +402,7 @@ function addSellerRow(sellerData) {
             <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
         </td>
         <td class="px-6 py-4 text-sm text-gray-500 col-valores">
-            <div>${formatCurrency(genericosSimilares.vendaLiquida)}</div>
+            <div>${qtdGenericosSimilares}</div>
         </td>
         <td class="px-6 py-4 text-sm text-gray-500 col-percent">
             <div>${formatPercentage(percentVendasGenericosSimilares)}</div>
