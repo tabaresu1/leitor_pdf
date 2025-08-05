@@ -73,7 +73,8 @@ def parse_pdf_data(raw_data):
                 qtd_valor = 0
                 if idx_itens is not None and len(row_str_list) > idx_itens:
                     try:
-                        qtd_valor = int(row_str_list[idx_itens].replace('.', '').replace(',', ''))
+                        qtd_str = row_str_list[idx_itens].replace('.', '').replace(',', '.')
+                        qtd_valor = int(float(qtd_str))
                     except ValueError:
                         qtd_valor = 0
 
