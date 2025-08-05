@@ -462,24 +462,25 @@ function exportToCSV() {
     
     allSellerData.forEach(seller => {
         const genericosSimilares = calculateGenericosSimilares(seller);
-        
-        const percentVendasMedEtico = seller.totalVenda > 0 ? 
-            seller.vendaMedEtico / seller.totalVenda : 0;
-        
-        const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
-            genericosSimilares.vendaLiquida / seller.totalVenda : 0;
+
+        const percentVendasMedEtico = seller.totalQtd > 0 ? 
+            seller.qtdMedEtico / seller.totalQtd : 0;
+
+        const qtdGenericosSimilares = (seller.qtdMedGene || 0) + (seller.qtdMedSimil || 0);
+        const percentVendasGenericosSimilares = seller.totalQtd > 0 ? 
+            qtdGenericosSimilares / seller.totalQtd : 0;
 
         const statusVendasEtico = getStatus(percentVendasMedEtico, null, 'percentVendasMedEtico');
         const statusDescontoEtico = getStatus(seller.descontoEticoPercent, null, 'percentDescontoEtico');
         const statusVendasGenericos = getStatus(percentVendasGenericosSimilares, null, 'percentVendasGenericosSimilares');
         const statusDescontoGenericos = getStatus(genericosSimilares.percentDesconto, null, 'percentDescontoGenericosSimilares');
         const statusPontos = getStatus(seller.totalVenda, null, 'pontos');
-        
+
         csv += `"${seller.vendedor || 'N/I'}";` +
-               `"${formatCurrency(seller.vendaMedEtico).replace(/\./g, ',')}";` +
+               `"${seller.qtdMedEtico}";` +
                `"${formatPercentage(percentVendasMedEtico).replace(/\./g, ',')}";` +
                `"${formatPercentage(seller.descontoEticoPercent).replace(/\./g, ',')}";` +
-               `"${formatCurrency(genericosSimilares.vendaLiquida).replace(/\./g, ',')}";` +
+               `"${qtdGenericosSimilares}";` +
                `"${formatPercentage(percentVendasGenericosSimilares).replace(/\./g, ',')}";` +
                `"${formatPercentage(genericosSimilares.percentDesconto).replace(/\./g, ',')}";` +
                `"${formatCurrency(seller.totalVenda).replace(/\./g, ',')}";` +
@@ -592,10 +593,11 @@ function generateCombinedSuggestions(sellers) {
 function generatePrintRows(data) {
     return data.map(seller => {
         const genericosSimilares = calculateGenericosSimilares(seller);
-        const percentVendasMedEtico = seller.totalVenda > 0 ? 
-            seller.vendaMedEtico / seller.totalVenda : 0;
-        const percentVendasGenericosSimilares = seller.totalVenda > 0 ? 
-            genericosSimilares.vendaLiquida / seller.totalVenda : 0;
+        const percentVendasMedEtico = seller.totalQtd > 0 ? 
+            seller.qtdMedEtico / seller.totalQtd : 0;
+        const qtdGenericosSimilares = (seller.qtdMedGene || 0) + (seller.qtdMedSimil || 0);
+        const percentVendasGenericosSimilares = seller.totalQtd > 0 ? 
+            qtdGenericosSimilares / seller.totalQtd : 0;
 
         const statusVendasEtico = getStatus(percentVendasMedEtico, null, 'percentVendasMedEtico');
         const statusDescontoEtico = getStatus(seller.descontoEticoPercent, null, 'percentDescontoEtico');
@@ -606,7 +608,7 @@ function generatePrintRows(data) {
         return `
             <tr>
                 <td>${seller.vendedor || 'N/I'}</td>
-                <td>${Math.round(seller.vendaMedEtico)}</td>
+                <td>${seller.qtdMedEtico}</td>
                 <td>
                     ${formatPercentage(percentVendasMedEtico)}
                     <div class="${statusVendasEtico.className}">${statusVendasEtico.message}</div>
@@ -615,7 +617,7 @@ function generatePrintRows(data) {
                     ${formatPercentage(seller.descontoEticoPercent)}
                     <div class="${statusDescontoEtico.className}">${statusDescontoEtico.message}</div>
                 </td>
-                <td>${Math.round(genericosSimilares.vendaLiquida)}</td>
+                <td>${qtdGenericosSimilares}</td>
                 <td>
                     ${formatPercentage(percentVendasGenericosSimilares)}
                     <div class="${statusVendasGenericos.className}">${statusVendasGenericos.message}</div>
