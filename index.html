@@ -326,7 +326,7 @@ function getStatus(value, ideal, type) {
             break;
 
         case 'percentVendasGenericosSimilares':
-            if (value > 0.75) {
+            if (value >= 0.75) {
                 className = 'status-ideal';
                 message = 'Dentro do ideal';
             } else if (value >= 0.70) {
